@@ -10,6 +10,29 @@ lbma_data = pd.read_csv("lbma_data.csv", parse_dates=["Date"])
 lbma_data.set_index("Date", inplace=True)
 
 # Parametry wejściowe
+start_button = st.sidebar.button("▶️ START – uruchom symulację")
+
+if start_button:
+    with st.spinner("Trwa przeliczanie strategii..."):
+        st.success("✅ Symulacja została uruchomiona. W kolejnych krokach można dodać logikę obliczeń, wykresy oraz tabelę wyników.")
+        # Przykładowa tabela
+        example_data = pd.DataFrame({
+            "Rok": [2023, 2024, 2025],
+            "Wartość portfela (EUR)": [104000, 108500, 112000],
+            "Zaangażowany kapitał (EUR)": [100000, 112000, 124000]
+        })
+        st.dataframe(example_data)
+
+        # Przykładowy wykres
+        fig, ax = plt.subplots()
+        ax.plot(example_data["Rok"], example_data["Wartość portfela (EUR)"], marker='o', label="Wartość portfela")
+        ax.plot(example_data["Rok"], example_data["Zaangażowany kapitał (EUR)"], marker='x', linestyle='--', label="Kapitał")
+        ax.set_title("Wartość portfela vs Kapitał")
+        ax.set_xlabel("Rok")
+        ax.set_ylabel("EUR")
+        ax.legend()
+        st.pyplot(fig)
+
 st.sidebar.header("Parametry symulacji")
 
 initial_amount = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", min_value=1000, value=100000)
@@ -52,4 +75,4 @@ rebuy = {
     'palladium': st.sidebar.number_input("Zakup palladu przy ReBalancingu (%)", value=6.5) / 100,
 }
 
-start_button = st.sidebar.button("▶️ START – uruchom symulację")
+
