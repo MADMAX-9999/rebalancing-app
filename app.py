@@ -68,13 +68,25 @@ if start_button:
 
         # Zakup początkowy
         try:
-            price_row = lbma_data[lbma_data.index >= current_date].iloc[0]
+            if current_date not in lbma_data.index:
+    st.warning(f"Brak danych dla dnia: {current_date}. Pomijam ten dzień.")
+    current_date += timedelta(days=1)
+    continue
+
+price_row = lbma_data.loc[current_date]
+if not all(col in price_row for col in ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]):
+    st.error(f"Brakuje kolumn cenowych dla dnia {current_date}.")
+    st.stop()
         except IndexError:
             st.error("Brak danych cenowych od daty początkowej.")
             st.stop()
 
         for m in allocation:
-            metal_price = price_row[f"{m.capitalize()}_EUR"] * (1 + markup[m])
+            metal_price_raw = price_row[f"{m.capitalize()}_EUR"]
+if metal_price_raw == 0:
+    st.warning(f"Cena {m} = 0 dla dnia {current_date}. Pomijam ten metal.")
+    continue
+metal_price = metal_price_raw * (1 + markup[m])
             current_grams[m] = (initial_amount * allocation[m]) / metal_price
 
         total_purchase = initial_amount
@@ -132,6 +144,8 @@ if start_button:
 
                         price_to_sell = lbma_data.loc[current_date][f"{metal_to_sell.capitalize()}_EUR"] * (1 - fee[metal_to_sell])
                         grams_to_sell = total_cost / price_to_sell
+if grams_to_sell > current_grams[metal_to_sell]:
+    grams_to_sell = current_grams[metal_to_sell]  # nie sprzedaj więcej niż masz
                         current_grams[metal_to_sell] -= grams_to_sell
 
                 years_seen.add(current_date.year)
@@ -150,7 +164,8 @@ if start_button:
                         delta = target_value[m] - current_val
                         if delta < 0:
                             sell_price = metal_price * (1 - fee[m])
-                            new_grams[m] = current_grams[m] - abs(delta) / sell_price
+                            grams_needed = abs(delta) / sell_price
+new_grams[m] = max(current_grams[m] - grams_needed, 0)
                         else:
                             buy_price = metal_price * (1 + rebuy[m])
                             new_grams[m] = current_grams[m] + delta / buy_price
@@ -163,7 +178,8 @@ if start_button:
                 try:
                     year_row = lbma_data[lbma_data.index.year == current_date.year].iloc[-1]
                     total_value = sum(current_grams[m] * year_row[f"{m.capitalize()}_EUR"] for m in allocation)
-                    portfolio_history.append({
+                    st.write(f"Rok: {current_date.year}, Wartość: {round(total_value, 2)}, Kapitał: {round(total_invested, 2)}")
+portfolio_history.append({
                         "Rok": current_date.year,
                         "Wartość portfela (EUR)": round(total_value, 2),
                         "Zaangażowany kapitał (EUR)": round(total_invested, 2),
