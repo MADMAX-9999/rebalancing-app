@@ -179,9 +179,12 @@ rebuy = {
     'gold': st.sidebar.number_input("Zakup złota przy ReBalancingu (%)", value=6.5) / 100,
     'silver': st.sidebar.number_input("Zakup srebra przy ReBalancingu (%)", value=6.5) / 100,
     'platinum': st.sidebar.number_input("Zakup platyny przy ReBalancingu (%)", value=6.5) / 100,
-    'palladium': st.sidebar.number_input("Zakup palladu przy ReBalancingu (%)", value=6.5) / 100,
+    'palladium': st.sidebar.number_input("Zakup palladu przy ReBalancingu (%)", value=6.5) / 100
 }
 
+# Przycisk uruchamiający symulację (na końcu sidebar)
 start_button = st.sidebar.button("▶️ START – uruchom symulację")
+
+
 
 
