@@ -67,20 +67,16 @@ if start_button:
         end_date = lbma_data.index[-1]
 
         # Zakup początkowy
-try:
-    if current_date not in lbma_data.index:
-        st.warning(f"Brak danych dla dnia: {current_date}. Pomijam ten dzień.")
-        current_date += timedelta(days=1)
-        continue
-
-    price_row = lbma_data.loc[current_date]
-    if not all(col in price_row for col in ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]):
-        st.error(f"Brakuje kolumn cenowych dla dnia {current_date}.")
-        st.stop()
-except IndexError:
-    st.warning("Błąd w danych. Pominięto dzień.")
+        try:
+if current_date not in lbma_data.index:
+    st.warning(f"Brak danych dla dnia: {current_date}. Pomijam ten dzień.")
     current_date += timedelta(days=1)
     continue
+
+price_row = lbma_data.loc[current_date]
+if not all(col in price_row for col in ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]):
+    st.error(f"Brakuje kolumn cenowych dla dnia {current_date}.")
+    st.stop()
 if not all(col in price_row for col in ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]):
     st.error(f"Brakuje kolumn cenowych dla dnia {current_date}.")
     st.stop()
