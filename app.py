@@ -14,23 +14,132 @@ start_button = st.sidebar.button("▶️ START – uruchom symulację")
 
 if start_button:
     with st.spinner("Trwa przeliczanie strategii..."):
-        st.success("✅ Symulacja została uruchomiona. W kolejnych krokach można dodać logikę obliczeń, wykresy oraz tabelę wyników.")
-        # Przykładowa tabela
-        example_data = pd.DataFrame({
-            "Rok": [2023, 2024, 2025],
-            "Wartość portfela (EUR)": [104000, 108500, 112000],
-            "Zaangażowany kapitał (EUR)": [100000, 112000, 124000]
-        })
-        st.dataframe(example_data)
+        allocation = {'gold': 0.4, 'silver': 0.2, 'platinum': 0.2, 'palladium': 0.2}
+        current_grams = {m: 0.0 for m in allocation}
+        total_invested = initial_amount
+        portfolio_history = []
+        current_date = pd.to_datetime(initial_date)
+        end_date = lbma_data.index[-1]
 
-        # Przykładowy wykres
+        # Zakup początkowy
+        try:
+            price_row = lbma_data[lbma_data.index >= current_date].iloc[0]
+        except IndexError:
+            st.error("Brak danych cenowych od daty początkowej.")
+            st.stop()
+
+        for m in allocation:
+            metal_price = price_row[f"{m.capitalize()}_EUR"] * (1 + markup[m])
+            current_grams[m] = (initial_amount * allocation[m]) / metal_price
+
+        total_purchase = initial_amount
+        years_seen = set()
+
+        while current_date <= end_date:
+            # Zakupy cykliczne
+            if periodicity == "Tygodniowo" and current_date.strftime('%A') == day_of_week:
+                if current_date in lbma_data.index:
+                    for m in allocation:
+                        price = lbma_data.loc[current_date][f"{m.capitalize()}_EUR"] * (1 + markup[m])
+                        value = monthly_purchase * allocation[m]
+                        current_grams[m] += value / price
+                    total_invested += monthly_purchase
+                    total_purchase += monthly_purchase
+
+            elif periodicity == "Miesięcznie" and current_date.day == day_of_month:
+                if current_date in lbma_data.index:
+                    for m in allocation:
+                        price = lbma_data.loc[current_date][f"{m.capitalize()}_EUR"] * (1 + markup[m])
+                        value = monthly_purchase * allocation[m]
+                        current_grams[m] += value / price
+                    total_invested += monthly_purchase
+                    total_purchase += monthly_purchase
+
+            elif periodicity == "Kwartalnie" and ((current_date.month - 1) % 3 == 0) and current_date.day == day_of_quarter:
+                if current_date in lbma_data.index:
+                    for m in allocation:
+                        price = lbma_data.loc[current_date][f"{m.capitalize()}_EUR"] * (1 + markup[m])
+                        value = monthly_purchase * allocation[m]
+                        current_grams[m] += value / price
+                    total_invested += monthly_purchase
+                    total_purchase += monthly_purchase
+
+            # Koszt magazynowania raz w roku (ostatni dzień roboczy danego roku)
+            if current_date.year not in years_seen:
+                same_year = lbma_data[lbma_data.index.year == current_date.year]
+                if not same_year.empty:
+                    last_day = same_year.index[-1]
+                    if current_date == last_day:
+                        storage_cost = storage_fee / 100 * total_purchase
+                        vat_cost = storage_cost * (storage_vat / 100)
+                        total_cost = storage_cost + vat_cost
+
+                        # wybór metalu do sprzedaży
+                        if storage_metal_choice.lower() == "best this year":
+                            year_data = same_year.iloc[[0, -1]]
+                            growth = {
+                                m: (year_data.iloc[1][f"{m.capitalize()}_EUR"] - year_data.iloc[0][f"{m.capitalize()}_EUR"]) / year_data.iloc[0][f"{m.capitalize()}_EUR"]
+                                for m in allocation
+                            }
+                            metal_to_sell = max(growth, key=growth.get)
+                        else:
+                            metal_to_sell = storage_metal_choice.lower()
+
+                        price_to_sell = lbma_data.loc[current_date][f"{metal_to_sell.capitalize()}_EUR"] * (1 - fee[metal_to_sell])
+                        grams_to_sell = total_cost / price_to_sell
+                        current_grams[metal_to_sell] -= grams_to_sell
+
+                years_seen.add(current_date.year)
+
+            # ReBalancing według wybranych dat
+            if (rebalance1_enabled and current_date.month == pd.to_datetime(rebalance1_date).month and current_date.day == pd.to_datetime(rebalance1_date).day and current_date >= pd.to_datetime(rebalance1_date)) or \
+               (rebalance2_enabled and current_date.month == pd.to_datetime(rebalance2_date).month and current_date.day == pd.to_datetime(rebalance2_date).day and current_date >= pd.to_datetime(rebalance2_date)):
+                try:
+                    price_row = lbma_data.loc[current_date]
+                    total_value = sum(current_grams[m] * price_row[f"{m.capitalize()}_EUR"] for m in allocation)
+                    target_value = {m: total_value * allocation[m] for m in allocation}
+                    new_grams = {}
+                    for m in allocation:
+                        metal_price = price_row[f"{m.capitalize()}_EUR"]
+                        current_val = current_grams[m] * metal_price
+                        delta = target_value[m] - current_val
+                        if delta < 0:
+                            sell_price = metal_price * (1 - fee[m])
+                            new_grams[m] = current_grams[m] - abs(delta) / sell_price
+                        else:
+                            buy_price = metal_price * (1 + rebuy[m])
+                            new_grams[m] = current_grams[m] + delta / buy_price
+                    current_grams = new_grams
+                except:
+                    pass
+
+            # Zapis roczny na 31.12 lub ostatni dzień roboczy
+            if current_date.month == 12:
+                try:
+                    year_row = lbma_data[lbma_data.index.year == current_date.year].iloc[-1]
+                    total_value = sum(current_grams[m] * year_row[f"{m.capitalize()}_EUR"] for m in allocation)
+                    portfolio_history.append({
+                        "Rok": current_date.year,
+                        "Wartość portfela (EUR)": round(total_value, 2),
+                        "Zaangażowany kapitał (EUR)": round(total_invested, 2),
+                    })
+                except:
+                    pass
+
+            current_date += timedelta(days=1)
+
+        df = pd.DataFrame(portfolio_history)
+        st.subheader("📊 Wyniki symulacji z historycznych danych")
+        st.dataframe(df)
+
+        st.subheader("📈 Wartość portfela vs. zaangażowany kapitał")
         fig, ax = plt.subplots()
-        ax.plot(example_data["Rok"], example_data["Wartość portfela (EUR)"], marker='o', label="Wartość portfela")
-        ax.plot(example_data["Rok"], example_data["Zaangażowany kapitał (EUR)"], marker='x', linestyle='--', label="Kapitał")
-        ax.set_title("Wartość portfela vs Kapitał")
+        ax.plot(df['Rok'], df['Wartość portfela (EUR)'], marker='o', label='Wartość portfela')
+        ax.plot(df['Rok'], df['Zaangażowany kapitał (EUR)'], marker='x', linestyle='--', label='Kapitał')
         ax.set_xlabel("Rok")
         ax.set_ylabel("EUR")
         ax.legend()
+        ax.grid(True)
         st.pyplot(fig)
 
 st.sidebar.header("Parametry symulacji")
