@@ -53,5 +53,3 @@ rebuy = {
 }
 
 start_button = st.sidebar.button("▶️ START – uruchom symulację")
-
-# dalszy kod obliczeń i rozliczenia kosztów magazynowania uzupełniam w kolejnym kroku, jeśli chcesz
