@@ -68,10 +68,6 @@ if start_button:
 
         # Zakup początkowy
         try:
-            if current_date not in lbma_data.index:
-    st.warning(f"Brak danych dla dnia: {current_date}. Pomijam ten dzień.")
-    current_date += timedelta(days=1)
-    continue
 
 if current_date not in lbma_data.index:
     st.warning(f"Brak danych dla dnia: {current_date}. Pomijam ten dzień.")
