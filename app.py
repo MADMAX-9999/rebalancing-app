@@ -10,8 +10,6 @@ lbma_data = pd.read_csv("lbma_data.csv", parse_dates=["Date"])
 lbma_data.set_index("Date", inplace=True)
 
 # Parametry wejściowe
-start_button = st.sidebar.button("▶️ START – uruchom symulację")
-
 if start_button:
     with st.spinner("Trwa przeliczanie strategii..."):
         allocation = {'gold': 0.4, 'silver': 0.2, 'platinum': 0.2, 'palladium': 0.2}
@@ -183,5 +181,7 @@ rebuy = {
     'platinum': st.sidebar.number_input("Zakup platyny przy ReBalancingu (%)", value=6.5) / 100,
     'palladium': st.sidebar.number_input("Zakup palladu przy ReBalancingu (%)", value=6.5) / 100,
 }
+
+start_button = st.sidebar.button("▶️ START – uruchom symulację")
 
 
