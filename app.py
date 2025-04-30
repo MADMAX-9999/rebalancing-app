@@ -73,7 +73,15 @@ if start_button:
     current_date += timedelta(days=1)
     continue
 
+if current_date not in lbma_data.index:
+    st.warning(f"Brak danych dla dnia: {current_date}. Pomijam ten dzień.")
+    current_date += timedelta(days=1)
+    continue
+
 price_row = lbma_data.loc[current_date]
+if not all(col in price_row for col in ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]):
+    st.error(f"Brakuje kolumn cenowych dla dnia {current_date}.")
+    st.stop()
 if not all(col in price_row for col in ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]):
     st.error(f"Brakuje kolumn cenowych dla dnia {current_date}.")
     st.stop()
