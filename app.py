@@ -41,7 +41,7 @@ rebuy = {
 allocation = {'gold': 0.4, 'silver': 0.2, 'platinum': 0.2, 'palladium': 0.2}
 
 # Inicjalizacja portfela
-start_price = lbma_data.loc[initial_date]
+start_price = lbma_data[lbma_data.index >= pd.to_datetime(initial_date)].iloc[0]
 initial_grams = {}
 for metal in allocation:
     spot = start_price[f"{metal.capitalize()}_EUR"]
