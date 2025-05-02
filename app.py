@@ -1346,7 +1346,7 @@ with col2:
     pie_fig = create_allocation_pie_chart(final_holdings, data.loc[end_date], language)
     st.plotly_chart(pie_fig, use_container_width=True)
 
-# 📊 Podsumowanie inwestycji – wersja uproszczona
+# 📊 Podsumowanie inwestycji – wersja z aktualnym stanem depozytu
 
 st.subheader(t("summary_title"))
 
@@ -1360,13 +1360,12 @@ portfolio_value = result["Portfolio Value"].iloc[-1]
 
 # Oblicz kwotę potrzebną na odtworzenie końcowego stanu depozytu
 purchase_replacement_value = 0.0
-
 for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-    grams = final_holdings[metal]  # aktualnie posiadana ilość na koniec
-    spot_price = data.loc[end_date][metal + "_EUR"]  # aktualna cena SPOT
-    margin_percent = margins[metal] / 100  # marża jako ułamek
-    buy_price = spot_price * (1 + margin_percent)  # cena zakupu
-    purchase_replacement_value += grams * buy_price  # suma wartości
+    grams = final_holdings[metal]
+    spot_price = data.loc[end_date][metal + "_EUR"]
+    margin_percent = margins[metal] / 100
+    buy_price = spot_price * (1 + margin_percent)
+    purchase_replacement_value += grams * buy_price
 
 # Oblicz średni roczny wzrost cen (ważony alokacją)
 weighted_start_price = sum(
@@ -1384,7 +1383,7 @@ if weighted_start_price > 0 and years > 0:
 else:
     weighted_avg_annual_growth = 0.0
 
-# Wyświetlanie w 1 kolumnie
+# Wyświetlanie
 col1 = st.container()
 
 with col1:
@@ -1392,10 +1391,9 @@ with col1:
     st.metric(t("purchase_value"), format_currency(portfolio_value))
     st.metric("Wartość odtworzenia końcowego stanu", format_currency(purchase_replacement_value))
     st.metric(
-    t("annual_growth_weighted"), 
-    f"{weighted_avg_annual_growth * 100:.2f}%",
-    delta=f"{weighted_avg_annual_growth * 100:.1f}%"
-    )
+        t("annual_growth_weighted"),
+        f"{weighted_avg_annual_growth * 100:.2f}%",
+        delta=f"{weighted_avg_annual_growth * 100:.1f}%"
 
 # Show yearly summary table
 st.subheader(t("yearly_view"))
