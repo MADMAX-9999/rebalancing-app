@@ -864,7 +864,7 @@ def create_portfolio_chart(result_df, language):
         y=chart_data["Portfolio Value"],
         mode='lines',
         name=t("portfolio_value"),
-        line=dict(color='#4F8BF9', width=2)
+        line=dict(color='#FFD700', width=2)
     ))
     
     # Add real portfolio value line if available
@@ -874,7 +874,7 @@ def create_portfolio_chart(result_df, language):
             y=chart_data["Portfolio Value Real"],
             mode='lines',
             name=t("real_portfolio_value"),
-            line=dict(color='#28A745', width=2, dash='dash')
+            line=dict(color='#FF0000', width=1, dash='dash')
         ))
     
     # Add invested capital line
@@ -883,7 +883,7 @@ def create_portfolio_chart(result_df, language):
         y=chart_data["Invested"],
         mode='lines',
         name=t("invested"),
-        line=dict(color='#FFC107', width=2)
+        line=dict(color='#808080', width=1)
     ))
     
     # Add storage costs if significant
