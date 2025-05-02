@@ -1472,3 +1472,4 @@ st.caption("Disclaimer: This simulation is for educational purposes only. Past p
 
 if __name__ == "__main__":
     # App is already running through Streamlit's script execution
+    pass
