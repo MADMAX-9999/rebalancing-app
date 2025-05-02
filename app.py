@@ -1356,27 +1356,64 @@ with col1:
     st.metric(t("capital_allocation"), format_currency(capital_invested))
     st.metric(t("purchase_value"), format_currency(portfolio_value))
 
-    # Oblicz Wartość metali przy zakupie (na podstawie aktualnych ilości w gramach)
+    # Oblicz Wartość metali przy zakupie
 purchase_replacement_value = 0.0
-
 for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-    grams = final_holdings[metal]  # <-- AKTUALNE ILOŚCI
-    spot_price = data.loc[end_date][metal + "_EUR"]  # AKTUALNA CENA
-    margin_percent = margins[metal] / 100  # MARŻA
-    buy_price = spot_price * (1 + margin_percent)  # CENA KUPNA (SPOT + marża)
-    purchase_replacement_value += grams * buy_price  # SUMUJEMY
+    spot_price = data.loc[end_date][metal + "_EUR"]
+    margin = margins[metal] / 100
+    purchase_price = spot_price * (1 + margin)
+    grams = final_holdings[metal]
+    purchase_replacement_value += grams * purchase_price
 
-# Wyświetl wynik
-st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
+    # Wyświetl dodatkowy moduł
+    st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
     
     # Calculate value difference 
     if portfolio_value > 0 and capital_invested > 0:
         diff_pct = ((portfolio_value / capital_invested) - 1) * 100
         st.metric(t("total_return"), f"{diff_pct:.2f}%", delta=f"{diff_pct:.1f}%")
 
+with col2:
+    # Calculate weighted average annual growth
+    weighted_start_price = sum(
+        allocation[metal] * data.loc[start_date][metal + "_EUR"]
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+    )
 
+    weighted_end_price = sum(
+        allocation[metal] * data.loc[end_date][metal + "_EUR"]
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+    )
+
+    if weighted_start_price > 0 and years > 0:
+        weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
+    else:
+        weighted_avg_annual_growth = 0.0
     
+    st.metric(
+        t("annual_growth_weighted"), 
+        f"{weighted_avg_annual_growth * 100:.2f}%",
+        delta=f"{weighted_avg_annual_growth * 100:.1f}%"
+    )
     
+    # Annualized return
+    st.metric(
+        t("annualized_return"),
+        f"{annual_return * 100:.2f}%",
+        delta=f"{annual_return * 100:.1f}%"
+    )
+    
+    # Average annual storage cost
+    total_storage_cost = result["Storage Cost"].sum()
+    if years > 0:
+        avg_annual_storage_cost = total_storage_cost / years
+    else:
+        avg_annual_storage_cost = 0.0
+    
+    st.metric(
+        t("annual_storage_cost"),
+        format_currency(avg_annual_storage_cost)
+    )
 
 # Show yearly summary table
 st.subheader(t("yearly_view"))
