@@ -1365,8 +1365,8 @@ for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
     grams = final_holdings[metal]
     purchase_replacement_value += grams * purchase_price
 
-# Wyświetl dodatkowy moduł
-st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
+    # Wyświetl dodatkowy moduł
+    st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
     
     # Calculate value difference 
     if portfolio_value > 0 and capital_invested > 0:
