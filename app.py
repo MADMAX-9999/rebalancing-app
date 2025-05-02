@@ -897,21 +897,20 @@ def create_portfolio_chart(result_df, language):
         ))
     
     # Update layout
-   fig.update_layout(
-    title=t("chart_subtitle"),
-    xaxis_title="Date",
-    yaxis_title="EUR",
-    height=700,  # <<< dodaj wysokość tutaj (np. 700 px)
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="right",
-        x=1
-    ),
-    template="plotly_white",
-    hovermode="x unified"
-)
+    fig.update_layout(
+        title=t("chart_subtitle"),
+        xaxis_title="Date",
+        yaxis_title="EUR",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        template="plotly_white",
+        hovermode="x unified"
+    )
     
     # Add range slider
     fig.update_xaxes(
