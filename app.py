@@ -1356,18 +1356,17 @@ with col1:
     st.metric(t("capital_allocation"), format_currency(capital_invested))
     st.metric(t("purchase_value"), format_currency(portfolio_value))
 
-    # Oblicz Wartość metali przy zakupie (na podstawie aktualnych ilości w gramach)
+    # Oblicz Wartość metali przy zakupie
 purchase_replacement_value = 0.0
-
 for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-    grams = final_holdings[metal]  # <-- AKTUALNE ILOŚCI
-    spot_price = data.loc[end_date][metal + "_EUR"]  # AKTUALNA CENA
-    margin_percent = margins[metal] / 100  # MARŻA
-    buy_price = spot_price * (1 + margin_percent)  # CENA KUPNA (SPOT + marża)
-    purchase_replacement_value += grams * buy_price  # SUMUJEMY
+    spot_price = data.loc[end_date][metal + "_EUR"]
+    margin = margins[metal] / 100
+    purchase_price = spot_price * (1 + margin)
+    grams = final_holdings[metal]
+    purchase_replacement_value += grams * purchase_price
 
-# Wyświetl wynik
-st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
+    # Wyświetl dodatkowy moduł
+    st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
     
     # Calculate value difference 
     if portfolio_value > 0 and capital_invested > 0:
@@ -1404,7 +1403,17 @@ with col2:
         delta=f"{annual_return * 100:.1f}%"
     )
     
+    # Average annual storage cost
+    total_storage_cost = result["Storage Cost"].sum()
+    if years > 0:
+        avg_annual_storage_cost = total_storage_cost / years
+    else:
+        avg_annual_storage_cost = 0.0
     
+    st.metric(
+        t("annual_storage_cost"),
+        format_currency(avg_annual_storage_cost)
+    )
 
 # Show yearly summary table
 st.subheader(t("yearly_view"))
