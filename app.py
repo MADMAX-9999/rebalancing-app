@@ -1356,17 +1356,18 @@ with col1:
     st.metric(t("capital_allocation"), format_currency(capital_invested))
     st.metric(t("purchase_value"), format_currency(portfolio_value))
 
-    # Oblicz Wartość metali przy zakupie
+    # Oblicz Wartość metali przy zakupie (na podstawie aktualnych ilości w gramach)
 purchase_replacement_value = 0.0
-for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-    spot_price = data.loc[end_date][metal + "_EUR"]
-    margin = margins[metal] / 100
-    purchase_price = spot_price * (1 + margin)
-    grams = final_holdings[metal]
-    purchase_replacement_value += grams * purchase_price
 
-    # Wyświetl dodatkowy moduł
-    st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
+for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+    grams = final_holdings[metal]  # <-- AKTUALNE ILOŚCI
+    spot_price = data.loc[end_date][metal + "_EUR"]  # AKTUALNA CENA
+    margin_percent = margins[metal] / 100  # MARŻA
+    buy_price = spot_price * (1 + margin_percent)  # CENA KUPNA (SPOT + marża)
+    purchase_replacement_value += grams * buy_price  # SUMUJEMY
+
+# Wyświetl wynik
+st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
     
     # Calculate value difference 
     if portfolio_value > 0 and capital_invested > 0:
