@@ -1269,10 +1269,11 @@ start_date = result.index.min()
 end_date = result.index.max()
 years = (end_date - start_date).days / 365.25
 
-# Calculate performance metrics
+# Oblicz wartość inwestycji i aktualny portfel
 capital_invested = result["Invested"].max()
+portfolio_value = result["Portfolio Value"].iloc[-1]
 
-
+# Oblicz roczną stopę zwrotu
 if capital_invested > 0 and years > 0:
     annual_return = (portfolio_value / capital_invested) ** (1 / years) - 1
 else:
