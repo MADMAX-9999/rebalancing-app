@@ -901,6 +901,7 @@ def create_portfolio_chart(result_df, language):
         title=t("chart_subtitle"),
         xaxis_title="Date",
         yaxis_title="EUR",
+        height=700,
         legend=dict(
             orientation="h",
             yanchor="bottom",
