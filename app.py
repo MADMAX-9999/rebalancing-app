@@ -1271,7 +1271,7 @@ years = (end_date - start_date).days / 365.25
 
 # Calculate performance metrics
 capital_invested = result["Invested"].max()
-portfolio_value = result["Portfolio Value"].iloc[-1]
+
 
 if capital_invested > 0 and years > 0:
     annual_return = (portfolio_value / capital_invested) ** (1 / years) - 1
@@ -1358,6 +1358,16 @@ years = (end_date - start_date).days / 365.25
 capital_invested = result["Invested"].max()
 portfolio_value = result["Portfolio Value"].iloc[-1]
 
+# Oblicz kwotę potrzebną na odtworzenie końcowego stanu depozytu
+purchase_replacement_value = 0.0
+
+for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+    grams = final_holdings[metal]  # aktualnie posiadana ilość na koniec
+    spot_price = data.loc[end_date][metal + "_EUR"]  # aktualna cena SPOT
+    margin_percent = margins[metal] / 100  # marża jako ułamek
+    buy_price = spot_price * (1 + margin_percent)  # cena zakupu
+    purchase_replacement_value += grams * buy_price  # suma wartości
+
 # Oblicz średni roczny wzrost cen (ważony alokacją)
 weighted_start_price = sum(
     allocation[metal] * data.loc[start_date][metal + "_EUR"]
@@ -1380,6 +1390,7 @@ col1 = st.container()
 with col1:
     st.metric(t("capital_allocation"), format_currency(capital_invested))
     st.metric(t("purchase_value"), format_currency(portfolio_value))
+    st.metric("Wartość odtworzenia końcowego stanu", format_currency(purchase_replacement_value))
     st.metric(
     t("annual_growth_weighted"), 
     f"{weighted_avg_annual_growth * 100:.2f}%",
