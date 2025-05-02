@@ -1,20 +1,19 @@
-pip install streamlit pandas numpy plotly
+# precious_metals_portfolio_simulator.py
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
 import altair as alt
-from pathlib import Path
 import json
 import os
+from datetime import datetime, timedelta
+from pathlib import Path
 
 # =========================================
 # CONFIG AND INITIALIZATION
 # =========================================
 
-# Application Configuration
 APP_CONFIG = {
     "page_title": "Precious Metals Portfolio Simulator",
     "layout": "wide",
@@ -22,7 +21,6 @@ APP_CONFIG = {
     "version": "2.0"
 }
 
-# Set page configuration
 st.set_page_config(
     page_title=APP_CONFIG["page_title"],
     layout=APP_CONFIG["layout"],
