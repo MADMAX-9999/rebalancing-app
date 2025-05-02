@@ -1374,7 +1374,35 @@ st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_
         diff_pct = ((portfolio_value / capital_invested) - 1) * 100
         st.metric(t("total_return"), f"{diff_pct:.2f}%", delta=f"{diff_pct:.1f}%")
 
+with col2:
+    # Calculate weighted average annual growth
+    weighted_start_price = sum(
+        allocation[metal] * data.loc[start_date][metal + "_EUR"]
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+    )
 
+    weighted_end_price = sum(
+        allocation[metal] * data.loc[end_date][metal + "_EUR"]
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+    )
+
+    if weighted_start_price > 0 and years > 0:
+        weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
+    else:
+        weighted_avg_annual_growth = 0.0
+    
+    st.metric(
+        t("annual_growth_weighted"), 
+        f"{weighted_avg_annual_growth * 100:.2f}%",
+        delta=f"{weighted_avg_annual_growth * 100:.1f}%"
+    )
+    
+    # Annualized return
+    st.metric(
+        t("annualized_return"),
+        f"{annual_return * 100:.2f}%",
+        delta=f"{annual_return * 100:.1f}%"
+    )
     
     
 
