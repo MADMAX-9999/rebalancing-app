@@ -1403,17 +1403,7 @@ with col2:
         delta=f"{annual_return * 100:.1f}%"
     )
     
-    # Average annual storage cost
-    total_storage_cost = result["Storage Cost"].sum()
-    if years > 0:
-        avg_annual_storage_cost = total_storage_cost / years
-    else:
-        avg_annual_storage_cost = 0.0
     
-    st.metric(
-        t("annual_storage_cost"),
-        format_currency(avg_annual_storage_cost)
-    )
 
 # Show yearly summary table
 st.subheader(t("yearly_view"))
