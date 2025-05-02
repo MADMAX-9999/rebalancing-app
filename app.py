@@ -1346,74 +1346,44 @@ with col2:
     pie_fig = create_allocation_pie_chart(final_holdings, data.loc[end_date], language)
     st.plotly_chart(pie_fig, use_container_width=True)
 
-# Key financial metrics
-st.subheader("💰 " + t("summary_title"))
+# 📊 Podsumowanie inwestycji – wersja uproszczona
 
-# Create two columns for metrics
-col1, col2 = st.columns(2)
+st.subheader(t("summary_title"))
+
+# Obliczenia podstawowe
+start_date = result.index.min()
+end_date = result.index.max()
+years = (end_date - start_date).days / 365.25
+
+capital_invested = result["Invested"].max()
+portfolio_value = result["Portfolio Value"].iloc[-1]
+
+# Oblicz średni roczny wzrost cen (ważony alokacją)
+weighted_start_price = sum(
+    allocation[metal] * data.loc[start_date][metal + "_EUR"]
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+)
+
+weighted_end_price = sum(
+    allocation[metal] * data.loc[end_date][metal + "_EUR"]
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+)
+
+if weighted_start_price > 0 and years > 0:
+    weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
+else:
+    weighted_avg_annual_growth = 0.0
+
+# Wyświetlanie w 1 kolumnie
+col1 = st.container()
 
 with col1:
     st.metric(t("capital_allocation"), format_currency(capital_invested))
     st.metric(t("purchase_value"), format_currency(portfolio_value))
-
-    # Oblicz Wartość metali przy zakupie
-purchase_replacement_value = 0.0
-for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-    spot_price = data.loc[end_date][metal + "_EUR"]
-    margin = margins[metal] / 100
-    purchase_price = spot_price * (1 + margin)
-    grams = final_holdings[metal]
-    purchase_replacement_value += grams * purchase_price
-
-    # Wyświetl dodatkowy moduł
-    st.metric(t("purchase_replacement_value"), format_currency(purchase_replacement_value))
-    
-    # Calculate value difference 
-    if portfolio_value > 0 and capital_invested > 0:
-        diff_pct = ((portfolio_value / capital_invested) - 1) * 100
-        st.metric(t("total_return"), f"{diff_pct:.2f}%", delta=f"{diff_pct:.1f}%")
-
-with col2:
-    # Calculate weighted average annual growth
-    weighted_start_price = sum(
-        allocation[metal] * data.loc[start_date][metal + "_EUR"]
-        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-    )
-
-    weighted_end_price = sum(
-        allocation[metal] * data.loc[end_date][metal + "_EUR"]
-        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-    )
-
-    if weighted_start_price > 0 and years > 0:
-        weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
-    else:
-        weighted_avg_annual_growth = 0.0
-    
     st.metric(
         t("annual_growth_weighted"), 
         f"{weighted_avg_annual_growth * 100:.2f}%",
         delta=f"{weighted_avg_annual_growth * 100:.1f}%"
-    )
-    
-    # Annualized return
-    st.metric(
-        t("annualized_return"),
-        f"{annual_return * 100:.2f}%",
-        delta=f"{annual_return * 100:.1f}%"
-    )
-    
-    # Average annual storage cost
-    total_storage_cost = result["Storage Cost"].sum()
-    if years > 0:
-        avg_annual_storage_cost = total_storage_cost / years
-    else:
-        avg_annual_storage_cost = 0.0
-    
-    st.metric(
-        t("annual_storage_cost"),
-        format_currency(avg_annual_storage_cost)
-    )
 
 # Show yearly summary table
 st.subheader(t("yearly_view"))
