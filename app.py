@@ -1387,13 +1387,23 @@ else:
 col1 = st.container()
 
 with col1:
-    st.metric(t("capital_allocation"), format_currency(capital_invested))
-    st.metric(t("purchase_value"), format_currency(portfolio_value))
-    st.metric("Wartość odtworzenia końcowego stanu", format_currency(purchase_replacement_value))
+    st.metric(
+        t("capital_allocation"),
+        format_currency(capital_invested)
+    )
+    st.metric(
+        t("purchase_value"),
+        format_currency(portfolio_value)
+    )
+    st.metric(
+        t("final_replacement_value"),
+        format_currency(purchase_replacement_value)
+    )
     st.metric(
         t("annual_growth_weighted"),
         f"{weighted_avg_annual_growth * 100:.2f}%",
         delta=f"{weighted_avg_annual_growth * 100:.1f}%"
+    )
 
 # Show yearly summary table
 st.subheader(t("yearly_view"))
