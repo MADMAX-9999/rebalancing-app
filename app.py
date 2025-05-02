@@ -1349,7 +1349,7 @@ with col2:
 
 # 📊 Podsumowanie inwestycji – wersja z aktualnym stanem depozytu
 
-st.subheader(t("summary_title"))
+st.title("📊 " + t("summary_title"))
 
 # Obliczenia podstawowe
 start_date = result.index.min()
