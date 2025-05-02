@@ -1347,9 +1347,11 @@ with col2:
     pie_fig = create_allocation_pie_chart(final_holdings, data.loc[end_date], language)
     st.plotly_chart(pie_fig, use_container_width=True)
 
-# 📊 Podsumowanie inwestycji – wersja z aktualnym stanem depozytu
+# 📊 Podsumowanie inwestycji – nowa wersja
 
-st.subheader(t("summary_title"))
+st.markdown("---")
+st.title("📊 " + t("summary_title"))
+st.markdown("---")
 
 # Obliczenia podstawowe
 start_date = result.index.min()
@@ -1359,7 +1361,13 @@ years = (end_date - start_date).days / 365.25
 capital_invested = result["Invested"].max()
 portfolio_value = result["Portfolio Value"].iloc[-1]
 
-# Oblicz kwotę potrzebną na odtworzenie końcowego stanu depozytu
+# Oblicz roczną stopę zwrotu
+if capital_invested > 0 and years > 0:
+    annual_return = (portfolio_value / capital_invested) ** (1 / years) - 1
+else:
+    annual_return = 0.0
+
+# Oblicz wartość odtworzenia końcowego stanu depozytu
 purchase_replacement_value = 0.0
 for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
     grams = final_holdings[metal]
@@ -1384,22 +1392,34 @@ if weighted_start_price > 0 and years > 0:
 else:
     weighted_avg_annual_growth = 0.0
 
-# Wyświetlanie
-col1 = st.container()
+# 📋 Layout 2 kolumny
+col1, col2 = st.columns(2)
 
 with col1:
+    # Całkowita kwota inwestycji
     st.metric(
         t("capital_allocation"),
         format_currency(capital_invested)
     )
-    st.metric(
-        t("purchase_value"),
-        format_currency(portfolio_value)
-    )
-    st.metric(
-        t("final_replacement_value"),
-        format_currency(purchase_replacement_value)
-    )
+
+    # Wartość metali po sprzedaży (zielona)
+    st.markdown(f"""
+    <div style="background-color: #E6F4EA; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+        <h4 style="color: green;">🛒 {t('purchase_value')}</h4>
+        <h2 style="color: green;">{format_currency(portfolio_value)}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    # Wartość odtworzenia końcowego stanu (czerwona)
+    st.markdown(f"""
+    <div style="background-color: #FDECEA; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+        <h4 style="color: red;">💎 {t('final_replacement_value')}</h4>
+        <h2 style="color: red;">{format_currency(purchase_replacement_value)}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Średni roczny wzrost cen (normalna metryka)
     st.metric(
         t("annual_growth_weighted"),
         f"{weighted_avg_annual_growth * 100:.2f}%",
