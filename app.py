@@ -1419,6 +1419,15 @@ storage_costs = result[result["Action"] == "storage_fee"]
 # Calculate total storage cost
 total_storage_cost = result["Storage Cost"].sum()
 
+# Liczenie średniorocznych kosztów magazynowania
+total_storage_cost = result["Storage Cost"].sum()
+
+if years > 0:
+    avg_annual_storage_cost = total_storage_cost / years
+else:
+    avg_annual_storage_cost = 0.0
+
+
 # Calculate percentage of current portfolio value
 if portfolio_value > 0:
     storage_pct = (avg_annual_storage_cost / portfolio_value) * 100
