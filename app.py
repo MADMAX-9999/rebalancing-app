@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import altair as alt
 import json
 import os
+import base64
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -18,7 +19,7 @@ APP_CONFIG = {
     "page_title": "Precious Metals Portfolio Simulator",
     "layout": "wide",
     "icon": "💰",
-    "version": "2.0"
+    "version": "2.1"  # Increased version number
 }
 
 st.set_page_config(
@@ -27,7 +28,7 @@ st.set_page_config(
     page_icon=APP_CONFIG["icon"]
 )
 
-# Set theme through CSS
+# Set theme through CSS with improved styling
 st.markdown("""
 <style>
     /* Custom theme colors */
@@ -45,10 +46,26 @@ st.markdown("""
     .platinum-text { color: var(--platinum-color); }
     .palladium-text { color: var(--palladium-color); }
     
-    /* Custom table formatting */
+    /* Improved table formatting */
     .dataframe {
         font-size: 14px;
         width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .dataframe th {
+        background-color: #f0f2f6;
+        padding: 8px;
+        border-bottom: 2px solid #ddd;
+    }
+    
+    .dataframe td {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .dataframe tr:nth-child(even) {
+        background-color: #f9f9f9;
     }
     
     /* Improve metrics appearance */
@@ -57,6 +74,12 @@ st.markdown("""
         border-radius: 5px;
         padding: 10px !important;
         border: 1px solid #e0e0e0;
+        transition: transform 0.2s;
+    }
+    
+    .stMetric:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     
     /* Better containers */
@@ -65,12 +88,64 @@ st.markdown("""
         border-radius: 5px;
         padding: 10px !important;
     }
+    
+    /* Tooltip styling */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: help;
+    }
+    
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================================
 # LANGUAGE SETTINGS AND TRANSLATIONS
 # =========================================
+
+# Improved: Load translations from external JSON file if available
+def load_translations():
+    try:
+        with open("translations.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # Fallback to hardcoded translations if file not found or invalid
+        return {
+            "Polski": {
+                "app_title": "Symulator ReBalancingu Portfela Metali Szlachetnych",
+                "portfolio_value": "Wartość portfela",
+                # ... other translations
+            },
+            "Deutsch": {
+                "app_title": "Edelmetallportfolio ReBalancing Simulator",
+                # ... other translations
+            },
+            "English": {
+                "app_title": "Precious Metals Portfolio Rebalancing Simulator",
+                # ... other translations
+            }
+        }
 
 # Initialize language in session state
 if "language" not in st.session_state:
@@ -94,288 +169,8 @@ if new_language != st.session_state.language:
 
 language = st.session_state.language
 
-# Translation dictionary (expanded with English)
-translations = {
-    "Polski": {
-        "app_title": "Symulator ReBalancingu Portfela Metali Szlachetnych",
-        "portfolio_value": "Wartość portfela",
-        "real_portfolio_value": "Wartość portfela (realna, po inflacji)",
-        "invested": "Zainwestowane",
-        "storage_cost": "Koszty magazynowania",
-        "chart_subtitle": "📈 Rozwój wartości portfela: nominalna i realna",
-        "summary_title": "📊 Podsumowanie inwestycji",
-        "simulation_settings": "⚙️ Parametry Symulacji",
-        "investment_amounts": "💰 Inwestycja: Kwoty i daty",
-        "metal_allocation": "⚖️ Alokacja metali szlachetnych (%)",
-        "recurring_purchases": "🔁 Zakupy cykliczne",
-        "rebalancing": "♻️ ReBalancing",
-        "storage_costs": "📦 Koszty magazynowania",
-        "margins_fees": "📊 Marże i prowizje",
-        "buyback_prices": "💵 Ceny odkupu metali",
-        "rebalance_prices": "♻️ Ceny ReBalancingu metali",
-        "initial_allocation": "Kwota początkowej alokacji (EUR)",
-        "first_purchase_date": "Data pierwszego zakupu",
-        "last_purchase_date": "Data ostatniego zakupu",
-        "purchase_frequency": "Periodyczność zakupów",
-        "none": "Brak",
-        "week": "Tydzień",
-        "month": "Miesiąc",
-        "quarter": "Kwartał",
-        "purchase_day_of_week": "Dzień tygodnia zakupu",
-        "purchase_day_of_month": "Dzień miesiąca zakupu (1–28)",
-        "purchase_day_of_quarter": "Dzień kwartału zakupu (1–28)",
-        "purchase_amount": "Kwota dokupu (EUR)",
-        "rebalance_1": "ReBalancing 1",
-        "rebalance_2": "ReBalancing 2",
-        "deviation_condition": "Warunek odchylenia wartości",
-        "deviation_threshold": "Próg odchylenia (%)",
-        "start_rebalance": "Start ReBalancing",
-        "monday": "Poniedziałek",
-        "tuesday": "Wtorek",
-        "wednesday": "Środa",
-        "thursday": "Czwartek",
-        "friday": "Piątek",
-        "gold": "Złoto (Au)",
-        "silver": "Srebro (Ag)",
-        "platinum": "Platyna (Pt)",
-        "palladium": "Pallad (Pd)",
-        "settings_saved": "✅ Ustawienia zostały zapisane!",
-        "run_simulation": "🚀 Uruchom symulację",
-        "reset_allocation": "🔄 Resetuj do 40/20/20/20",
-        "allocation_error": "❗ Suma alokacji: {}% – musi wynosić dokładnie 100%, aby kontynuować.",
-        "price_growth": "📊 Wzrost cen metali od startu inwestycji",
-        "current_holdings": "⚖️ Aktualnie posiadane ilości metali (g)",
-        "capital_allocation": "💶 Alokacja kapitału",
-        "sales_valuation": "📦 Wycena sprzedażowa metali",
-        "purchase_value": "🛒 Wartość metali po sprzedaży",
-        "difference": "📈 Różnica względem wartości portfela",
-        "annual_growth": "📈 Średni roczny rozwój cen wszystkich metali razem (ważony alokacją)",
-        "annual_growth_weighted": "🌐 Średni roczny wzrost cen (ważony alokacją)",
-        "yearly_view": "📅 Mały uproszczony podgląd: Pierwszy dzień każdego roku",
-        "storage_summary": "📦 Podsumowanie kosztów magazynowania",
-        "annual_storage_cost": "Średnioroczny koszt magazynowy",
-        "storage_cost_percent": "Koszt magazynowania (% ostatni rok)",
-        "date_range_error": "⚠️ Zakres zakupów: tylko {:.1f} lat. (minimum 7 lat wymagane!)",
-        "date_range_success": "✅ Zakres zakupów: {:.1f} lat.",
-        "invested_amount": "Zainwestowane (EUR)",
-        "portfolio_value_short": "Wartość portfela (EUR)",
-        "action": "Akcja",
-        "export_data": "💾 Eksportuj dane",
-        "export_settings": "⚙️ Eksportuj ustawienia",
-        "import_settings": "📥 Importuj ustawienia",
-        "save_settings": "💾 Zapisz ustawienia",
-        "advanced_options": "🔧 Opcje zaawansowane",
-        "inflation_settings": "📈 Ustawienia inflacji",
-        "custom_inflation": "Niestandardowa inflacja (%)",
-        "year": "Rok",
-        "calculations": "📝 Szczegółowe obliczenia",
-        "total_return": "Całkowity zwrot",
-        "annualized_return": "Zwrot roczny",
-        "gold_margin": "Marża Gold (%)",
-        "silver_margin": "Marża Silver (%)",
-        "platinum_margin": "Marża Platinum (%)",
-        "palladium_margin": "Marża Palladium (%)",
-        "gold_buyback": "Złoto odk. od SPOT (%)",
-        "silver_buyback": "Srebro odk. od SPOT (%)",
-        "platinum_buyback": "Platyna odk. od SPOT (%)",
-        "palladium_buyback": "Pallad odk. od SPOT (%)",
-        "gold_rebalance": "Złoto ReBalancing (%)",
-        "silver_rebalance": "Srebro ReBalancing (%)",
-        "platinum_rebalance": "Platyna ReBalancing (%)",
-        "palladium_rebalance": "Pallad ReBalancing (%)",
-        "annual_storage_fee": "Roczny koszt magazynowania (%)",
-        "vat": "VAT (%)",
-        "storage_metal": "Metal do pokrycia kosztów",
-        "best_of_year": "Najlepszy w roku",
-        "all_metals": "Wszystkie proporcjonalnie",
-    },
-    "Deutsch": {
-        "app_title": "Edelmetallportfolio ReBalancing Simulator",
-        "portfolio_value": "Portfoliowert",
-        "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
-        "invested": "Investiertes Kapital",
-        "storage_cost": "Lagerkosten",
-        "chart_subtitle": "📈 Entwicklung des Portfoliowerts: nominal und real",
-        "summary_title": "📊 Investitionszusammenfassung",
-        "simulation_settings": "⚙️ Simulationseinstellungen",
-        "investment_amounts": "💰 Investition: Beträge und Daten",
-        "metal_allocation": "⚖️ Aufteilung der Edelmetalle (%)",
-        "recurring_purchases": "🔁 Regelmäßige Käufe",
-        "rebalancing": "♻️ ReBalancing",
-        "storage_costs": "📦 Lagerkosten",
-        "margins_fees": "📊 Margen und Gebühren",
-        "buyback_prices": "💵 Rückkaufpreise der Metalle",
-        "rebalance_prices": "♻️ Preise für ReBalancing der Metalle",
-        "initial_allocation": "Anfangsinvestition (EUR)",
-        "first_purchase_date": "Kaufstartdatum",
-        "last_purchase_date": "Letzter Kauftag",
-        "purchase_frequency": "Kaufhäufigkeit",
-        "none": "Keine",
-        "week": "Woche",
-        "month": "Monat",
-        "quarter": "Quartal",
-        "purchase_day_of_week": "Wochentag für Kauf",
-        "purchase_day_of_month": "Kauftag im Monat (1–28)",
-        "purchase_day_of_quarter": "Kauftag im Quartal (1–28)",
-        "purchase_amount": "Kaufbetrag (EUR)",
-        "rebalance_1": "ReBalancing 1",
-        "rebalance_2": "ReBalancing 2",
-        "deviation_condition": "Abweichungsbedingung",
-        "deviation_threshold": "Abweichungsschwelle (%)",
-        "start_rebalance": "Start des ReBalancing",
-        "monday": "Montag",
-        "tuesday": "Dienstag",
-        "wednesday": "Mittwoch",
-        "thursday": "Donnerstag",
-        "friday": "Freitag",
-        "gold": "Gold (Au)",
-        "silver": "Silber (Ag)",
-        "platinum": "Platin (Pt)",
-        "palladium": "Palladium (Pd)",
-        "settings_saved": "✅ Einstellungen gespeichert!",
-        "run_simulation": "🚀 Simulation starten",
-        "reset_allocation": "🔄 Zurücksetzen auf 40/20/20/20",
-        "allocation_error": "❗ Aufteilungssumme: {}% – muss genau 100% betragen, um fortzufahren.",
-        "price_growth": "📊 Preissteigerung der Metalle seit Investitionsbeginn",
-        "current_holdings": "⚖️ Aktuelle Metallbestände (g)",
-        "capital_allocation": "💶 Kapitalallokation",
-        "sales_valuation": "📦 Verkaufsbewertung der Metalle",
-        "purchase_value": "🛒 Verkaufswert der Metalle",
-        "difference": "📈 Differenz zum Portfoliowert",
-        "annual_growth": "📈 Durchschnittliche jährliche Preisentwicklung aller Metalle (gewichtet nach Allokation)",
-        "annual_growth_weighted": "🌐 Durchschnittliches jährliches Wachstum (gewichtet nach Allokation)",
-        "yearly_view": "📅 Vereinfachte Übersicht: Erster Tag jedes Jahres",
-        "storage_summary": "📦 Zusammenfassung der Lagerkosten",
-        "annual_storage_cost": "Durchschnittliche jährliche Lagerkosten",
-        "storage_cost_percent": "Lagerkosten (% letztes Jahr)",
-        "date_range_error": "⚠️ Kaufzeitraum: nur {:.1f} Jahre. (Minimum 7 Jahre erforderlich!)",
-        "date_range_success": "✅ Kaufzeitraum: {:.1f} Jahre.",
-        "invested_amount": "Investiert (EUR)",
-        "portfolio_value_short": "Portfoliowert (EUR)",
-        "action": "Aktion",
-        "export_data": "💾 Daten exportieren",
-        "export_settings": "⚙️ Einstellungen exportieren",
-        "import_settings": "📥 Einstellungen importieren",
-        "save_settings": "💾 Einstellungen speichern",
-        "advanced_options": "🔧 Erweiterte Optionen",
-        "inflation_settings": "📈 Inflationseinstellungen",
-        "custom_inflation": "Benutzerdefinierte Inflation (%)",
-        "year": "Jahr",
-        "calculations": "📝 Detaillierte Berechnungen",
-        "total_return": "Gesamtrendite",
-        "annualized_return": "Jährliche Rendite",
-        "gold_margin": "Gold Marge (%)",
-        "silver_margin": "Silber Marge (%)",
-        "platinum_margin": "Platin Marge (%)",
-        "palladium_margin": "Palladium Marge (%)",
-        "gold_buyback": "Gold Rückkauf von SPOT (%)",
-        "silver_buyback": "Silber Rückkauf von SPOT (%)",
-        "platinum_buyback": "Platin Rückkauf von SPOT (%)",
-        "palladium_buyback": "Palladium Rückkauf von SPOT (%)",
-        "gold_rebalance": "Gold ReBalancing (%)",
-        "silver_rebalance": "Silber ReBalancing (%)",
-        "platinum_rebalance": "Platin ReBalancing (%)",
-        "palladium_rebalance": "Palladium ReBalancing (%)",
-        "annual_storage_fee": "Jährliche Lagerkosten (%)",
-        "vat": "MwSt (%)",
-        "storage_metal": "Metall zur Kostendeckung",
-        "best_of_year": "Bestes des Jahres",
-        "all_metals": "Alle proportional",
-    },
-    "English": {
-        "app_title": "Precious Metals Portfolio Rebalancing Simulator",
-        "portfolio_value": "Portfolio Value",
-        "real_portfolio_value": "Portfolio Value (Real, Inflation-Adjusted)",
-        "invested": "Invested Capital",
-        "storage_cost": "Storage Costs",
-        "chart_subtitle": "📈 Portfolio Value Development: Nominal and Real",
-        "summary_title": "📊 Investment Summary",
-        "simulation_settings": "⚙️ Simulation Settings",
-        "investment_amounts": "💰 Investment: Amounts and Dates",
-        "metal_allocation": "⚖️ Precious Metals Allocation (%)",
-        "recurring_purchases": "🔁 Recurring Purchases",
-        "rebalancing": "♻️ Rebalancing",
-        "storage_costs": "📦 Storage Costs",
-        "margins_fees": "📊 Margins and Fees",
-        "buyback_prices": "💵 Metal Buyback Prices",
-        "rebalance_prices": "♻️ Metal Rebalancing Prices",
-        "initial_allocation": "Initial Allocation Amount (EUR)",
-        "first_purchase_date": "First Purchase Date",
-        "last_purchase_date": "Last Purchase Date",
-        "purchase_frequency": "Purchase Frequency",
-        "none": "None",
-        "week": "Weekly",
-        "month": "Monthly",
-        "quarter": "Quarterly",
-        "purchase_day_of_week": "Day of Week for Purchase",
-        "purchase_day_of_month": "Day of Month for Purchase (1–28)",
-        "purchase_day_of_quarter": "Day of Quarter for Purchase (1–28)",
-        "purchase_amount": "Purchase Amount (EUR)",
-        "rebalance_1": "Rebalancing 1",
-        "rebalance_2": "Rebalancing 2",
-        "deviation_condition": "Value Deviation Condition",
-        "deviation_threshold": "Deviation Threshold (%)",
-        "start_rebalance": "Start Rebalancing",
-        "monday": "Monday",
-        "tuesday": "Tuesday",
-        "wednesday": "Wednesday",
-        "thursday": "Thursday",
-        "friday": "Friday",
-        "gold": "Gold (Au)",
-        "silver": "Silver (Ag)",
-        "platinum": "Platinum (Pt)",
-        "palladium": "Palladium (Pd)",
-        "settings_saved": "✅ Settings saved!",
-        "run_simulation": "🚀 Run Simulation",
-        "reset_allocation": "🔄 Reset to 40/20/20/20",
-        "allocation_error": "❗ Allocation sum: {}% – must be exactly 100% to continue.",
-        "price_growth": "📊 Metal Price Growth Since Investment Start",
-        "current_holdings": "⚖️ Current Metal Holdings (g)",
-        "capital_allocation": "💶 Capital Allocation",
-        "sales_valuation": "📦 Metals Sale Valuation",
-        "purchase_value": "🛒 Metals Sale Value",
-        "difference": "📈 Difference from Portfolio Value",
-        "annual_growth": "📈 Average Annual Price Development of All Metals (Allocation-Weighted)",
-        "annual_growth_weighted": "🌐 Average Annual Growth (Allocation-Weighted)",
-        "yearly_view": "📅 Simplified Overview: First Day of Each Year",
-        "storage_summary": "📦 Storage Costs Summary",
-        "annual_storage_cost": "Average Annual Storage Cost",
-        "storage_cost_percent": "Storage Cost (% of Last Year)",
-        "date_range_error": "⚠️ Purchase range: only {:.1f} years. (minimum 7 years required!)",
-        "date_range_success": "✅ Purchase range: {:.1f} years.",
-        "invested_amount": "Invested (EUR)",
-        "portfolio_value_short": "Portfolio Value (EUR)",
-        "action": "Action",
-        "export_data": "💾 Export Data",
-        "export_settings": "⚙️ Export Settings",
-        "import_settings": "📥 Import Settings",
-        "save_settings": "💾 Save Settings",
-        "advanced_options": "🔧 Advanced Options",
-        "inflation_settings": "📈 Inflation Settings",
-        "custom_inflation": "Custom Inflation (%)",
-        "year": "Year",
-        "calculations": "📝 Detailed Calculations",
-        "total_return": "Total Return",
-        "annualized_return": "Annualized Return",
-        "gold_margin": "Gold Margin (%)",
-        "silver_margin": "Silver Margin (%)",
-        "platinum_margin": "Platinum Margin (%)",
-        "palladium_margin": "Palladium Margin (%)",
-        "gold_buyback": "Gold Buyback from SPOT (%)",
-        "silver_buyback": "Silver Buyback from SPOT (%)",
-        "platinum_buyback": "Platinum Buyback from SPOT (%)",
-        "palladium_buyback": "Palladium Buyback from SPOT (%)",
-        "gold_rebalance": "Gold Rebalancing (%)",
-        "silver_rebalance": "Silver Rebalancing (%)",
-        "platinum_rebalance": "Platinum Rebalancing (%)",
-        "palladium_rebalance": "Palladium Rebalancing (%)",
-        "annual_storage_fee": "Annual Storage Fee (%)",
-        "vat": "VAT (%)",
-        "storage_metal": "Metal for Cost Coverage",
-        "best_of_year": "Best of Year",
-        "all_metals": "All Proportionally",
-    }
-}
+# Load translations
+translations = load_translations()
 
 # Helper function to get translation
 def t(key):
@@ -383,17 +178,29 @@ def t(key):
     return translations.get(language, {}).get(key, key)
 
 # =========================================
-# DATA LOADING FUNCTIONS
+# DATA LOADING FUNCTIONS WITH IMPROVED ERROR HANDLING
 # =========================================
 
 @st.cache_data
 def load_data():
-    """Load and preprocess the LBMA price data"""
+    """Load and preprocess the LBMA price data with improved error handling"""
     try:
-        df = pd.read_csv("lbma_data.csv", parse_dates=True, index_col=0)
-        df = df.sort_index()
-        df = df.dropna()
-        return df
+        # First try to load from the data directory
+        data_paths = ["lbma_data.csv", "data/lbma_data.csv", "../data/lbma_data.csv"]
+        
+        for path in data_paths:
+            try:
+                df = pd.read_csv(path, parse_dates=True, index_col=0)
+                df = df.sort_index()
+                df = df.dropna()
+                return df
+            except (FileNotFoundError, pd.errors.EmptyDataError):
+                continue
+                
+        # If all paths fail, generate sample data
+        st.warning("LBMA data file not found. Using generated sample data.")
+        return generate_sample_data()
+        
     except Exception as e:
         st.error(f"Error loading LBMA data: {e}")
         # Return sample data if file not found (for testing)
@@ -401,13 +208,25 @@ def load_data():
 
 @st.cache_data
 def load_inflation_data():
-    """Load and preprocess inflation data"""
+    """Load and preprocess inflation data with improved error handling"""
     try:
-        df = pd.read_csv("inflacja.csv", sep=";", encoding="cp1250")
-        df = df[["Rok", "Wartość"]].copy()
-        df["Wartość"] = df["Wartość"].str.replace(",", ".").astype(float)
-        df["Inflacja (%)"] = df["Wartość"] - 100
-        return df[["Rok", "Inflacja (%)"]]
+        # First try to load from the data directory
+        data_paths = ["inflacja.csv", "data/inflacja.csv", "../data/inflacja.csv"]
+        
+        for path in data_paths:
+            try:
+                df = pd.read_csv(path, sep=";", encoding="cp1250")
+                df = df[["Rok", "Wartość"]].copy()
+                df["Wartość"] = df["Wartość"].str.replace(",", ".").astype(float)
+                df["Inflacja (%)"] = df["Wartość"] - 100
+                return df[["Rok", "Inflacja (%)"]]
+            except (FileNotFoundError, pd.errors.EmptyDataError):
+                continue
+        
+        # If all paths fail, generate sample data
+        st.warning("Inflation data file not found. Using generated sample data.")
+        return generate_sample_inflation_data()
+        
     except Exception as e:
         st.error(f"Error loading inflation data: {e}")
         # Return sample data if file not found
@@ -466,7 +285,7 @@ def save_settings_to_file(settings, filename="precious_metals_settings.json"):
     """Save current settings to a JSON file"""
     try:
         settings_path = Path(filename)
-        with open(settings_path, 'w') as f:
+        with open(settings_path, 'w', encoding='utf-8') as f:
             json.dump(settings, f, indent=4, default=str)
         return True
     except Exception as e:
@@ -478,13 +297,62 @@ def load_settings_from_file(filename="precious_metals_settings.json"):
     try:
         settings_path = Path(filename)
         if settings_path.exists():
-            with open(settings_path, 'r') as f:
+            with open(settings_path, 'r', encoding='utf-8') as f:
                 settings = json.load(f)
             return settings
         return None
     except Exception as e:
         st.error(f"Error loading settings: {e}")
         return None
+
+# New function to save simulation results to PDF
+def create_pdf_download_link(fig, portfolio_data, filename="precious_metals_report.pdf"):
+    """Create a download link for a PDF report of the simulation"""
+    try:
+        import io
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+        from reportlab.lib import colors
+        import plotly.io as pio
+        
+        # Convert plotly figure to image
+        img_bytes = pio.to_image(fig, format="png")
+        
+        # Create PDF buffer
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Add title
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(50, height - 50, "Precious Metals Portfolio Simulation Report")
+        
+        # Add date
+        c.setFont("Helvetica", 10)
+        c.drawString(50, height - 70, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        
+        # Add chart
+        c.drawImage(io.BytesIO(img_bytes), 50, height - 400, width=500, height=300)
+        
+        # Add portfolio summary
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, height - 430, "Portfolio Summary")
+        
+        c.setFont("Helvetica", 10)
+        y_pos = height - 450
+        for i, (key, value) in enumerate(portfolio_data.items()):
+            c.drawString(50, y_pos - (i * 20), f"{key}: {value}")
+        
+        c.save()
+        buffer.seek(0)
+        
+        # Convert to download link
+        b64 = base64.b64encode(buffer.read()).decode()
+        return f'<a href="data:application/pdf;base64,{b64}" download="{filename}">Download PDF Report</a>'
+    except ImportError:
+        return "PDF generation requires ReportLab package. Install with: pip install reportlab"
+    except Exception as e:
+        return f"Error generating PDF: {e}"
 
 # =========================================
 # HELPER FUNCTIONS
@@ -503,85 +371,221 @@ def generate_purchase_dates(start_date, freq, day, end_date):
     Returns:
         List of purchase dates (datetime objects)
     """
-    dates = []
-    current = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
-    
-    # Convert day names to day numbers if necessary
-    if isinstance(day, str):
-        day_mapping = {
-            "Monday": 0, "Tuesday": 1, "Wednesday": 2, 
-            "Thursday": 3, "Friday": 4
-        }
-        day = day_mapping.get(day, 0)
-    
-    if freq == t("week"):
-        while current <= end_date:
-            # Find next day of the week
-            days_ahead = (day - current.weekday()) % 7
-            current = current + timedelta(days=days_ahead)
-            if current <= end_date:
-                dates.append(current)
-            current += timedelta(weeks=1)
-    
-    elif freq == t("month"):
-        while current <= end_date:
-            # Set to day of month, handling month lengths
-            try:
-                current = current.replace(day=min(day, 28))
-            except ValueError:
-                # End of month handling
-                last_day = pd.Timestamp(current.year, current.month, 1) + pd.offsets.MonthEnd()
-                current = last_day
+    try:
+        dates = []
+        current = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+        
+        # Convert day names to day numbers if necessary
+        if isinstance(day, str):
+            day_mapping = {
+                "Monday": 0, "Tuesday": 1, "Wednesday": 2, 
+                "Thursday": 3, "Friday": 4
+            }
+            day = day_mapping.get(day, 0)
+        
+        if freq == t("week"):
+            while current <= end_date:
+                # Find next day of the week
+                days_ahead = (day - current.weekday()) % 7
+                current = current + timedelta(days=days_ahead)
+                if current <= end_date:
+                    dates.append(current)
+                current += timedelta(weeks=1)
+        
+        elif freq == t("month"):
+            while current <= end_date:
+                # Set to day of month, handling month lengths
+                try:
+                    current = current.replace(day=min(day, 28))
+                except ValueError:
+                    # End of month handling
+                    last_day = pd.Timestamp(current.year, current.month, 1) + pd.offsets.MonthEnd()
+                    current = last_day
+                    
+                if current <= end_date:
+                    dates.append(current)
+                current += pd.DateOffset(months=1)
+        
+        elif freq == t("quarter"):
+            while current <= end_date:
+                # Set to first month of quarter
+                quarter_month = 3 * ((current.month - 1) // 3) + 1
+                try:
+                    current = current.replace(month=quarter_month, day=min(day, 28))
+                except ValueError:
+                    # End of month handling
+                    last_day = pd.Timestamp(current.year, quarter_month, 1) + pd.offsets.MonthEnd()
+                    current = last_day
+                    
+                if current <= end_date:
+                    dates.append(current)
+                current += pd.DateOffset(months=3)
+        
+        # Map dates to nearest available dates in the dataset
+        available_dates = []
+        for d in dates:
+            nearest_idx = data.index.get_indexer([d], method="nearest")
+            if len(nearest_idx) > 0 and nearest_idx[0] >= 0:
+                available_dates.append(data.index[nearest_idx[0]])
                 
-            if current <= end_date:
-                dates.append(current)
-            current += pd.DateOffset(months=1)
-    
-    elif freq == t("quarter"):
-        while current <= end_date:
-            # Set to first month of quarter
-            quarter_month = 3 * ((current.month - 1) // 3) + 1
-            try:
-                current = current.replace(month=quarter_month, day=min(day, 28))
-            except ValueError:
-                # End of month handling
-                last_day = pd.Timestamp(current.year, quarter_month, 1) + pd.offsets.MonthEnd()
-                current = last_day
-                
-            if current <= end_date:
-                dates.append(current)
-            current += pd.DateOffset(months=3)
-    
-    # Map dates to nearest available dates in the dataset
-    available_dates = []
-    for d in dates:
-        nearest_idx = data.index.get_indexer([d], method="nearest")
-        if len(nearest_idx) > 0 and nearest_idx[0] >= 0:
-            available_dates.append(data.index[nearest_idx[0]])
-            
-    return available_dates
+        return available_dates
+    except Exception as e:
+        st.error(f"Error generating purchase dates: {e}")
+        return []
 
 def find_best_metal_of_year(start_date, end_date):
     """Find the metal with the best performance in a given period"""
-    start_prices = data.loc[start_date]
-    end_prices = data.loc[end_date]
-    growth = {}
-    
-    for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-        start_price = start_prices[f"{metal}_EUR"]
-        end_price = end_prices[f"{metal}_EUR"]
-        growth[metal] = (end_price / start_price) - 1
-    
-    return max(growth, key=growth.get)
+    try:
+        start_prices = data.loc[start_date]
+        end_prices = data.loc[end_date]
+        growth = {}
+        
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+            start_price = start_prices[f"{metal}_EUR"]
+            end_price = end_prices[f"{metal}_EUR"]
+            growth[metal] = (end_price / start_price) - 1
+        
+        return max(growth, key=growth.get)
+    except Exception as e:
+        st.warning(f"Could not determine best metal: {e}")
+        return "Gold"  # Default to Gold on error
 
 def format_currency(amount, currency="EUR"):
     """Format amount as currency"""
     return f"{amount:,.2f} {currency}"
 
 # =========================================
-# SIMULATION LOGIC
+# SIMULATION LOGIC - REFACTORED FOR BETTER READABILITY
 # =========================================
+
+def process_initial_purchase(initial_date, allocation, initial_allocation, margins):
+    """Process the initial purchase and return the portfolio and invested amount"""
+    portfolio = {metal: 0.0 for metal in allocation}
+    
+    initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
+    prices = data.loc[initial_ts]
+    
+    for metal, percent in allocation.items():
+        price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
+        grams = (initial_allocation * percent) / price
+        portfolio[metal] += grams
+    
+    return portfolio, initial_allocation, initial_ts
+
+def process_recurring_purchase(date, portfolio, allocation, margins, purchase_amount):
+    """Process a recurring purchase and return the updated portfolio and amount invested"""
+    prices = data.loc[date]
+    additional_investment = 0
+    
+    for metal, percent in allocation.items():
+        price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
+        grams = (purchase_amount * percent) / price
+        portfolio[metal] += grams
+        additional_investment += purchase_amount * percent
+    
+    return portfolio, additional_investment
+
+def apply_rebalance(date, portfolio, allocation, prices, label, condition_enabled, 
+                   threshold_percent, buyback_discounts, rebalance_markup, last_rebalance_dates):
+    """Apply portfolio rebalancing on given date if conditions are met"""
+    # Check minimum time since last rebalance
+    min_days_between_rebalances = 30
+    last_date = last_rebalance_dates.get(label)
+    
+    if last_date is not None and (date - last_date).days < min_days_between_rebalances:
+        return portfolio, f"rebalancing_skipped_{label}_too_soon"
+    
+    # Calculate current portfolio value and allocation
+    total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+    
+    if total_value == 0:
+        return portfolio, f"rebalancing_skipped_{label}_no_value"
+    
+    # Calculate current allocation percentages
+    current_shares = {
+        m: (prices[m + "_EUR"] * portfolio[m]) / total_value
+        for m in allocation
+    }
+    
+    # Check if deviation exceeds threshold
+    rebalance_trigger = False
+    for metal in allocation:
+        deviation = abs(current_shares[metal] - allocation[metal]) * 100
+        if deviation >= threshold_percent:
+            rebalance_trigger = True
+            break
+    
+    # Skip if condition enabled but threshold not met
+    if condition_enabled and not rebalance_trigger:
+        return portfolio, f"rebalancing_skipped_{label}_no_deviation"
+    
+    # Calculate target values
+    target_value = {m: total_value * allocation[m] for m in allocation}
+    
+    # Perform rebalancing
+    cash = 0
+    for metal in allocation:
+        current_value = prices[metal + "_EUR"] * portfolio[metal]
+        diff = current_value - target_value[metal]
+        
+        if diff > 0:  # Need to sell this metal
+            sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+            grams_to_sell = min(diff / sell_price, portfolio[metal])
+            portfolio[metal] -= grams_to_sell
+            cash += grams_to_sell * sell_price
+    
+    # Distribute cash to metals that need it
+    for metal in allocation:
+        current_value = prices[metal + "_EUR"] * portfolio[metal]
+        diff = target_value[metal] - current_value
+        
+        if diff > 0 and cash > 0:  # Need to buy this metal
+            buy_price = prices[metal + "_EUR"] * (1 + rebalance_markup[metal] / 100)
+            buy_grams = min(cash / buy_price, diff / buy_price)
+            portfolio[metal] += buy_grams
+            cash -= buy_grams * buy_price
+    
+    # Update last rebalance date in the caller's dictionary
+    last_rebalance_dates[label] = date
+    return portfolio, label
+
+def apply_storage_costs(date, portfolio, invested, storage_settings, buyback_discounts, last_year):
+    """Apply annual storage costs by selling metals"""
+    last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
+    storage_cost = invested * (storage_settings["storage_fee"] / 100) * (1 + storage_settings["vat"] / 100)
+    prices_end = data.loc[last_year_end]
+    
+    # Apply storage costs based on selected metal
+    if storage_settings["storage_metal"] == t("best_of_year"):
+        metal_to_sell = find_best_metal_of_year(
+            data.index[data.index.year == last_year][0],
+            data.index[data.index.year == last_year][-1]
+        )
+        sell_price = prices_end[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
+        grams_needed = storage_cost / sell_price
+        grams_needed = min(grams_needed, portfolio[metal_to_sell])
+        portfolio[metal_to_sell] -= grams_needed
+    
+    elif storage_settings["storage_metal"] == "ALL":
+        total_value = sum(prices_end[m + "_EUR"] * portfolio[m] for m in portfolio)
+        if total_value > 0:
+            for metal in portfolio:
+                share = (prices_end[metal + "_EUR"] * portfolio[metal]) / total_value
+                cash_needed = storage_cost * share
+                sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+                grams_needed = cash_needed / sell_price
+                grams_needed = min(grams_needed, portfolio[metal])
+                portfolio[metal] -= grams_needed
+    
+    else:  # Single metal
+        metal = storage_settings["storage_metal"]
+        sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+        grams_needed = storage_cost / sell_price
+        grams_needed = min(grams_needed, portfolio[metal])
+        portfolio[metal] -= grams_needed
+    
+    return portfolio, storage_cost, last_year_end
 
 def simulate_portfolio(
     allocation,
@@ -596,7 +600,8 @@ def simulate_portfolio(
     margins,
     buyback_discounts,
     rebalance_markup,
-    inflation_data=None
+    inflation_data=None,
+    storage_frequency="Annual"  # New parameter
 ):
     """
     Simulate precious metals portfolio over time with rebalancing and storage costs
@@ -615,238 +620,187 @@ def simulate_portfolio(
         buyback_discounts: Dictionary of buyback discounts
         rebalance_markup: Dictionary of rebalancing markups
         inflation_data: Optional custom inflation data
+        storage_frequency: Frequency of storage fee application
         
     Returns:
         DataFrame with portfolio simulation results
     """
-    # Initialize portfolio
-    portfolio = {metal: 0.0 for metal in allocation}
-    history = []
-    invested = 0.0
-    
-    # Define date range
-    all_dates = data.loc[initial_date:end_purchase_date].index
-    
-    # Generate purchase dates
-    purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
-    
-    # Initialize tracking variables
-    last_year = None
-    last_rebalance_dates = {
-        "rebalance_1": None,
-        "rebalance_2": None
-    }
-    
-    # Helper function to apply rebalancing
-    def apply_rebalance(date, label, condition_enabled, threshold_percent):
-        """Apply portfolio rebalancing on given date if conditions are met"""
-        # Check minimum time since last rebalance
-        min_days_between_rebalances = 30
-        last_date = last_rebalance_dates.get(label)
+    try:
+        # Initialize portfolio
+        portfolio = {metal: 0.0 for metal in allocation}
+        history = []
+        invested = 0.0
         
-        if last_date is not None and (date - last_date).days < min_days_between_rebalances:
-            return f"rebalancing_skipped_{label}_too_soon"
+        # Define date range
+        all_dates = data.loc[initial_date:end_purchase_date].index
         
-        # Calculate current portfolio value and allocation
-        prices = data.loc[date]
-        total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+        # Generate purchase dates
+        purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
         
-        if total_value == 0:
-            return f"rebalancing_skipped_{label}_no_value"
+        # Initialize tracking variables
+        last_year = None
+        last_month = None
+        last_quarter = None
         
-        # Calculate current allocation percentages
-        current_shares = {
-            m: (prices[m + "_EUR"] * portfolio[m]) / total_value
-            for m in allocation
+        last_rebalance_dates = {
+            "rebalance_1": None,
+            "rebalance_2": None
         }
         
-        # Check if deviation exceeds threshold
-        rebalance_trigger = False
-        for metal in allocation:
-            deviation = abs(current_shares[metal] - allocation[metal]) * 100
-            if deviation >= threshold_percent:
-                rebalance_trigger = True
-                break
+        # Make initial purchase
+        portfolio, initial_invested, initial_ts = process_initial_purchase(
+            initial_date, allocation, initial_allocation, margins
+        )
         
-        # Skip if condition enabled but threshold not met
-        if condition_enabled and not rebalance_trigger:
-            return f"rebalancing_skipped_{label}_no_deviation"
+        invested += initial_invested
+        history.append((initial_ts, invested, dict(portfolio), "initial"))
         
-        # Calculate target values
-        target_value = {m: total_value * allocation[m] for m in allocation}
+        # Determine relevant dates for storage fee application
+        storage_dates = set()
+        if storage_frequency == "Annual":
+            storage_dates = {d for d in all_dates if d.month == 12 and d.day >= 28}
+        elif storage_frequency == "Quarterly":
+            storage_dates = {d for d in all_dates if d.month in [3, 6, 9, 12] and d.day >= 28}
+        elif storage_frequency == "Monthly":
+            storage_dates = {d for d in all_dates if d.day >= 28}
         
-        # Perform rebalancing
-        for metal in allocation:
-            current_value = prices[metal + "_EUR"] * portfolio[metal]
-            diff = current_value - target_value[metal]
+        # Simulate through all dates
+        for date in all_dates:
+            actions = []
             
-            if diff > 0:  # Need to sell this metal
-                sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                grams_to_sell = min(diff / sell_price, portfolio[metal])
-                portfolio[metal] -= grams_to_sell
-                cash = grams_to_sell * sell_price
-                
-                # Distribute to other metals that need it
-                for buy_metal in allocation:
-                    needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
-                    if needed_value > 0:
-                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
-                        buy_grams = min(cash / buy_price, needed_value / buy_price)
-                        portfolio[buy_metal] += buy_grams
-                        cash -= buy_grams * buy_price
-                        if cash <= 0:
-                            break
-        
-        # Update last rebalance date
-        last_rebalance_dates[label] = date
-        return label
-    
-    # Make initial purchase
-    initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
-    prices = data.loc[initial_ts]
-    
-    for metal, percent in allocation.items():
-        price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
-        grams = (initial_allocation * percent) / price
-        portfolio[metal] += grams
-    
-    invested += initial_allocation
-    history.append((initial_ts, invested, dict(portfolio), "initial"))
-    
-    # Simulate through all dates
-    for date in all_dates:
-        actions = []
-        
-        # Handle recurring purchases
-        if date in purchase_dates:
-            prices = data.loc[date]
-            for metal, percent in allocation.items():
-                price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
-                grams = (purchase_amount * percent) / price
-                portfolio[metal] += grams
-            invested += purchase_amount
-            actions.append("recurring")
-        
-        # Check for first rebalancing
-        if (rebalance_settings["rebalance_1"] and 
-            date >= pd.to_datetime(rebalance_settings["rebalance_1_start"]) and 
-            date.month == rebalance_settings["rebalance_1_start"].month and 
-            date.day == rebalance_settings["rebalance_1_start"].day):
-            
-            actions.append(apply_rebalance(
-                date, 
-                "rebalance_1", 
-                rebalance_settings["rebalance_1_condition"], 
-                rebalance_settings["rebalance_1_threshold"]
-            ))
-        
-        # Check for second rebalancing
-        if (rebalance_settings["rebalance_2"] and 
-            date >= pd.to_datetime(rebalance_settings["rebalance_2_start"]) and 
-            date.month == rebalance_settings["rebalance_2_start"].month and 
-            date.day == rebalance_settings["rebalance_2_start"].day):
-            
-            actions.append(apply_rebalance(
-                date, 
-                "rebalance_2", 
-                rebalance_settings["rebalance_2_condition"], 
-                rebalance_settings["rebalance_2_threshold"]
-            ))
-        
-        # Handle year change (storage fees)
-        if last_year is None:
-            last_year = date.year
-            
-        if date.year != last_year:
-            last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
-            storage_cost = invested * (storage_settings["storage_fee"] / 100) * (1 + storage_settings["vat"] / 100)
-            prices_end = data.loc[last_year_end]
-            
-            # Apply storage costs based on selected metal
-            if storage_settings["storage_metal"] == "Best of year":
-                metal_to_sell = find_best_metal_of_year(
-                    data.index[data.index.year == last_year][0],
-                    data.index[data.index.year == last_year][-1]
+            # Handle recurring purchases
+            if date in purchase_dates:
+                portfolio, additional = process_recurring_purchase(
+                    date, portfolio, allocation, margins, purchase_amount
                 )
-                sell_price = prices_end[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
-                grams_needed = storage_cost / sell_price
-                grams_needed = min(grams_needed, portfolio[metal_to_sell])
-                portfolio[metal_to_sell] -= grams_needed
+                invested += additional
+                actions.append("recurring")
             
-            elif storage_settings["storage_metal"] == "ALL":
-                total_value = sum(prices_end[m + "_EUR"] * portfolio[m] for m in allocation)
-                for metal in allocation:
-                    share = (prices_end[metal + "_EUR"] * portfolio[metal]) / total_value
-                    cash_needed = storage_cost * share
-                    sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                    grams_needed = cash_needed / sell_price
-                    grams_needed = min(grams_needed, portfolio[metal])
-                    portfolio[metal] -= grams_needed
+            # Check for second rebalancing
+            if (rebalance_settings["rebalance_2"] and 
+                date >= pd.to_datetime(rebalance_settings["rebalance_2_start"]) and 
+                date.month == rebalance_settings["rebalance_2_start"].month and 
+                date.day == rebalance_settings["rebalance_2_start"].day):
+                
+                portfolio, rebalance_action = apply_rebalance(
+                    date, 
+                    portfolio,
+                    allocation,
+                    data.loc[date],
+                    "rebalance_2", 
+                    rebalance_settings["rebalance_2_condition"], 
+                    rebalance_settings["rebalance_2_threshold"],
+                    buyback_discounts,
+                    rebalance_markup,
+                    last_rebalance_dates
+                )
+                
+                actions.append(rebalance_action)
             
-            else:  # Single metal
-                metal = storage_settings["storage_metal"]
-                sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                grams_needed = storage_cost / sell_price
-                grams_needed = min(grams_needed, portfolio[metal])
-                portfolio[metal] -= grams_needed
+            # Handle storage costs based on the frequency
+            # For Annual frequency, apply costs at year end
+            if storage_frequency == "Annual" and last_year is None:
+                last_year = date.year
+            elif storage_frequency == "Annual" and date.year != last_year:
+                portfolio, storage_cost, fee_date = apply_storage_costs(
+                    date, portfolio, invested, storage_settings, buyback_discounts, last_year
+                )
+                history.append((fee_date, invested, dict(portfolio), "storage_fee"))
+                last_year = date.year
+                
+            # For Quarterly frequency, apply costs at quarter end
+            elif storage_frequency == "Quarterly":
+                current_quarter = (date.month - 1) // 3
+                if last_quarter is None:
+                    last_quarter = current_quarter
+                elif current_quarter != last_quarter:
+                    # Apply quarterly fee (1/4 of annual fee)
+                    quarterly_settings = dict(storage_settings)
+                    quarterly_settings["storage_fee"] = storage_settings["storage_fee"] / 4
+                    portfolio, storage_cost, fee_date = apply_storage_costs(
+                        date, portfolio, invested, quarterly_settings, buyback_discounts, date.year
+                    )
+                    history.append((fee_date, invested, dict(portfolio), "quarterly_fee"))
+                    last_quarter = current_quarter
+                    
+            # For Monthly frequency, apply costs at month end
+            elif storage_frequency == "Monthly":
+                if last_month is None:
+                    last_month = date.month
+                elif date.month != last_month:
+                    # Apply monthly fee (1/12 of annual fee)
+                    monthly_settings = dict(storage_settings)
+                    monthly_settings["storage_fee"] = storage_settings["storage_fee"] / 12
+                    portfolio, storage_cost, fee_date = apply_storage_costs(
+                        date, portfolio, invested, monthly_settings, buyback_discounts, date.year
+                    )
+                    history.append((fee_date, invested, dict(portfolio), "monthly_fee"))
+                    last_month = date.month
             
-            history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
-            last_year = date.year
+            # Record actions if any occurred
+            if actions:
+                history.append((date, invested, dict(portfolio), ", ".join(actions)))
         
-        # Record actions if any occurred
-        if actions:
-            history.append((date, invested, dict(portfolio), ", ".join(actions)))
-    
-    # Create result dataframe
-    result = pd.DataFrame([
-        {
-            "Date": h[0],
-            "Invested": h[1],
-            **{m: h[2][m] for m in allocation},
-            "Portfolio Value": sum(
-                data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
-                for m in allocation
-            ),
-            "Action": h[3]
-        } for h in history
-    ]).set_index("Date")
-    
-    # Add real (inflation-adjusted) portfolio value
-    if inflation_data is not None:
-        inflation_dict = dict(zip(inflation_data["Rok"], inflation_data["Inflacja (%)"]))
-        start_year = result.index.min().year
+        # Create result dataframe
+        result = pd.DataFrame([
+            {
+                "Date": h[0],
+                "Invested": h[1],
+                **{m: h[2][m] for m in allocation},
+                "Portfolio Value": sum(
+                    data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
+                    for m in allocation
+                ),
+                "Action": h[3]
+            } for h in history
+        ]).set_index("Date")
         
-        real_values = []
-        for date in result.index:
-            nominal_value = result.loc[date, "Portfolio Value"]
-            current_year = date.year
+        # Add real (inflation-adjusted) portfolio value
+        if inflation_data is not None:
+            inflation_dict = dict(zip(inflation_data["Rok"], inflation_data["Inflacja (%)"]))
+            start_year = result.index.min().year
             
-            # Calculate cumulative inflation factor
-            cumulative_factor = 1.0
-            for year in range(start_year, current_year + 1):
-                inflation = inflation_dict.get(year, 0.0) / 100
-                cumulative_factor *= (1 + inflation)
+            real_values = []
+            for date in result.index:
+                nominal_value = result.loc[date, "Portfolio Value"]
+                current_year = date.year
+                
+                # Calculate cumulative inflation factor
+                cumulative_factor = 1.0
+                for year in range(start_year, current_year + 1):
+                    inflation = inflation_dict.get(year, 0.0) / 100
+                    cumulative_factor *= (1 + inflation)
+                
+                real_value = nominal_value / cumulative_factor if cumulative_factor != 0 else nominal_value
+                real_values.append(real_value)
             
-            real_value = nominal_value / cumulative_factor if cumulative_factor != 0 else nominal_value
-            real_values.append(real_value)
+            result["Portfolio Value Real"] = real_values
         
-        result["Portfolio Value Real"] = real_values
+        # Add storage cost column
+        result["Storage Cost"] = 0.0
+        storage_cost_dates = result[result["Action"].str.contains("fee")].index
+        
+        for date in storage_cost_dates:
+            if storage_frequency == "Annual":
+                result.at[date, "Storage Cost"] = result.at[date, "Invested"] * (storage_settings["storage_fee"] / 100) * (1 + storage_settings["vat"] / 100)
+            elif storage_frequency == "Quarterly":
+                result.at[date, "Storage Cost"] = result.at[date, "Invested"] * (storage_settings["storage_fee"] / 400) * (1 + storage_settings["vat"] / 100)
+            elif storage_frequency == "Monthly":
+                result.at[date, "Storage Cost"] = result.at[date, "Invested"] * (storage_settings["storage_fee"] / 1200) * (1 + storage_settings["vat"] / 100)
+        
+        return result
     
-    # Add storage cost column
-    result["Storage Cost"] = 0.0
-    storage_cost_dates = result[result["Action"] == "storage_fee"].index
-    
-    for date in storage_cost_dates:
-        result.at[date, "Storage Cost"] = result.at[date, "Invested"] * (storage_settings["storage_fee"] / 100) * (1 + storage_settings["vat"] / 100)
-    
-    return result
+    except Exception as e:
+        st.error(f"Error in portfolio simulation: {e}")
+        # Return empty DataFrame with proper columns
+        return pd.DataFrame(columns=["Date", "Invested", *allocation.keys(), "Portfolio Value", "Action", "Storage Cost"])
 
 # =========================================
-# VISUALIZATION FUNCTIONS
+# VISUALIZATION FUNCTIONS WITH IMPROVED ANNOTATIONS
 # =========================================
 
 def create_portfolio_chart(result_df, language):
-    """Create interactive plotly chart for portfolio values"""
+    """Create interactive plotly chart for portfolio values with improved annotations"""
     # Prepare data for chart
     chart_data = result_df.copy()
     
@@ -896,6 +850,27 @@ def create_portfolio_chart(result_df, language):
             marker=dict(color='#DC3545', size=8, symbol='triangle-down')
         ))
     
+    # Add rebalancing event annotations
+    rebalance_events = chart_data[chart_data["Action"].str.contains("rebalance_[12]$", regex=True)]
+    
+    for date, row in rebalance_events.iterrows():
+        fig.add_annotation(
+            x=date,
+            y=row["Portfolio Value"],
+            text="♻️ Rebalance",
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=1,
+            arrowcolor="#4CAF50",
+            bgcolor="#4CAF50",
+            bordercolor="#4CAF50",
+            font=dict(color="white", size=10),
+            borderwidth=1,
+            borderpad=2,
+            opacity=0.8
+        )
+    
     # Update layout
     fig.update_layout(
         title=t("chart_subtitle"),
@@ -944,7 +919,10 @@ def create_allocation_pie_chart(portfolio, prices, language):
         labels=labels_with_pct,
         values=values,
         hole=.4,
-        marker_colors=colors
+        marker_colors=colors,
+        textinfo='percent',
+        hoverinfo='label+value+percent',
+        textfont=dict(size=14)
     )])
     
     fig.update_layout(
@@ -955,8 +933,70 @@ def create_allocation_pie_chart(portfolio, prices, language):
     
     return fig
 
+# New function to create metal performance comparison chart
+def create_metal_performance_chart(start_date, end_date, allocation):
+    """Create a comparison chart of metal price performance"""
+    start_prices = data.loc[start_date]
+    
+    # Create normalized series for each metal (starting at 100)
+    performance_data = []
+    for date in data.loc[start_date:end_date].index:
+        prices = data.loc[date]
+        row = {"date": date}
+        
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+            normalized_price = (prices[f"{metal}_EUR"] / start_prices[f"{metal}_EUR"]) * 100
+            row[metal] = normalized_price
+            
+        performance_data.append(row)
+    
+    perf_df = pd.DataFrame(performance_data)
+    
+    # Create plotly figure
+    fig = go.Figure()
+    
+    # Add lines for each metal
+    colors = {'Gold': '#D4AF37', 'Silver': '#C0C0C0', 'Platinum': '#E5E4E2', 'Palladium': '#CED0DD'}
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+        fig.add_trace(go.Scatter(
+            x=perf_df["date"],
+            y=perf_df[metal],
+            mode='lines',
+            name=t(metal.lower()),
+            line=dict(color=colors[metal], width=3)
+        ))
+    
+    # Add reference line at 100
+    fig.add_shape(
+        type="line",
+        x0=start_date,
+        y0=100,
+        x1=end_date,
+        y1=100,
+        line=dict(color="black", width=1, dash="dash"),
+    )
+    
+    # Update layout
+    fig.update_layout(
+        title="Metal Price Performance (indexed to 100)",
+        xaxis_title="Date",
+        yaxis_title="Price Index (Start = 100)",
+        height=500,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        template="plotly_white",
+        hovermode="x unified"
+    )
+    
+    return fig
+
 # =========================================
-# MAIN APP LAYOUT
+# MAIN APP LAYOUT WITH IMPROVED UX
 # =========================================
 
 # Load data
@@ -978,7 +1018,8 @@ with st.sidebar:
     initial_allocation = st.number_input(
         t("initial_allocation"),
         value=100000.0,
-        step=100.0
+        step=100.0,
+        help="The initial amount to invest across all metals"
     )
     
     today = datetime.today()
@@ -988,7 +1029,8 @@ with st.sidebar:
         t("first_purchase_date"),
         value=default_initial_date.date(),
         min_value=data.index.min().date(),
-        max_value=data.index.max().date()
+        max_value=data.index.max().date(),
+        help="When your investment starts"
     )
     
     # Calculate minimum end date (initial_date + 7 years)
@@ -1000,7 +1042,8 @@ with st.sidebar:
         t("last_purchase_date"),
         value=data.index.max().date(),
         min_value=min_end_date,
-        max_value=data.index.max().date()
+        max_value=data.index.max().date(),
+        help="When your investment period ends"
     )
     
     # Calculate investment period
@@ -1024,7 +1067,7 @@ with st.sidebar:
             st.session_state[f"alloc_{metal}"] = default
     
     # Reset button
-    if st.button(t("reset_allocation")):
+    if st.button(t("reset_allocation"), help="Reset to default 40/20/20/20 allocation"):
         st.session_state["alloc_Gold"] = 40
         st.session_state["alloc_Silver"] = 20
         st.session_state["alloc_Platinum"] = 20
@@ -1032,10 +1075,22 @@ with st.sidebar:
         st.rerun()
     
     # Allocation sliders
-    allocation_gold = st.slider(t("gold"), 0, 100, key="alloc_Gold")
-    allocation_silver = st.slider(t("silver"), 0, 100, key="alloc_Silver")
-    allocation_platinum = st.slider(t("platinum"), 0, 100, key="alloc_Platinum")
-    allocation_palladium = st.slider(t("palladium"), 0, 100, key="alloc_Palladium")
+    allocation_gold = st.slider(
+        t("gold"), 0, 100, key="alloc_Gold", 
+        help="Percentage allocated to Gold"
+    )
+    allocation_silver = st.slider(
+        t("silver"), 0, 100, key="alloc_Silver", 
+        help="Percentage allocated to Silver"
+    )
+    allocation_platinum = st.slider(
+        t("platinum"), 0, 100, key="alloc_Platinum", 
+        help="Percentage allocated to Platinum"
+    )
+    allocation_palladium = st.slider(
+        t("palladium"), 0, 100, key="alloc_Palladium", 
+        help="Percentage allocated to Palladium"
+    )
     
     # Calculate total allocation
     total_allocation = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
@@ -1054,25 +1109,48 @@ with st.sidebar:
     purchase_freq = st.selectbox(
         t("purchase_frequency"),
         [t("none"), t("week"), t("month"), t("quarter")],
-        index=1
+        index=1,
+        help="How often to make additional purchases"
     )
     
     if purchase_freq == t("week"):
         days_of_week = [t("monday"), t("tuesday"), t("wednesday"), t("thursday"), t("friday")]
-        selected_day = st.selectbox(t("purchase_day_of_week"), days_of_week, index=0)
+        selected_day = st.selectbox(
+            t("purchase_day_of_week"), 
+            days_of_week, 
+            index=0,
+            help="Which day of the week to make purchases"
+        )
         purchase_day = selected_day
         default_purchase_amount = 250.0
     elif purchase_freq == t("month"):
-        purchase_day = st.number_input(t("purchase_day_of_month"), min_value=1, max_value=28, value=1)
+        purchase_day = st.number_input(
+            t("purchase_day_of_month"), 
+            min_value=1, 
+            max_value=28, 
+            value=1,
+            help="Which day of the month to make purchases (1-28)"
+        )
         default_purchase_amount = 1000.0
     elif purchase_freq == t("quarter"):
-        purchase_day = st.number_input(t("purchase_day_of_quarter"), min_value=1, max_value=28, value=1)
+        purchase_day = st.number_input(
+            t("purchase_day_of_quarter"), 
+            min_value=1, 
+            max_value=28, 
+            value=1,
+            help="Which day of the first month of each quarter to make purchases (1-28)"
+        )
         default_purchase_amount = 3250.0
     else:
         purchase_day = None
         default_purchase_amount = 0.0
     
-    purchase_amount = st.number_input(t("purchase_amount"), value=default_purchase_amount, step=50.0)
+    purchase_amount = st.number_input(
+        t("purchase_amount"), 
+        value=default_purchase_amount, 
+        step=50.0,
+        help="Amount to invest in each recurring purchase"
+    )
     
     # Rebalancing settings
     st.subheader(t("rebalancing"))
@@ -1083,39 +1161,59 @@ with st.sidebar:
     rebalance_2_default = datetime(rebalance_base_year, 10, 1)
     
     # First rebalancing
-    rebalance_1 = st.checkbox(t("rebalance_1"), value=True)
-    rebalance_1_condition = st.checkbox(t("deviation_condition") + " 1", value=False)
+    rebalance_1 = st.checkbox(
+        t("rebalance_1"), 
+        value=True,
+        help="Enable the first annual rebalancing event"
+    )
+    rebalance_1_condition = st.checkbox(
+        t("deviation_condition") + " 1", 
+        value=False,
+        help="Only rebalance if allocation deviates beyond threshold"
+    )
     rebalance_1_threshold = st.number_input(
         t("deviation_threshold") + " 1",
         min_value=0.0,
         max_value=100.0,
         value=12.0,
-        step=0.5
+        step=0.5,
+        help="Percentage deviation that triggers rebalancing"
     )
     
     rebalance_1_start = st.date_input(
         t("start_rebalance") + " 1",
         value=rebalance_1_default.date(),
         min_value=data.index.min().date(),
-        max_value=data.index.max().date()
+        max_value=data.index.max().date(),
+        help="Date when first rebalancing starts (recurs annually)"
     )
     
     # Second rebalancing
-    rebalance_2 = st.checkbox(t("rebalance_2"), value=False)
-    rebalance_2_condition = st.checkbox(t("deviation_condition") + " 2", value=False)
+    rebalance_2 = st.checkbox(
+        t("rebalance_2"), 
+        value=False,
+        help="Enable a second annual rebalancing event"
+    )
+    rebalance_2_condition = st.checkbox(
+        t("deviation_condition") + " 2", 
+        value=False,
+        help="Only rebalance if allocation deviates beyond threshold"
+    )
     rebalance_2_threshold = st.number_input(
         t("deviation_threshold") + " 2",
         min_value=0.0,
         max_value=100.0,
         value=12.0,
-        step=0.5
+        step=0.5,
+        help="Percentage deviation that triggers rebalancing"
     )
     
     rebalance_2_start = st.date_input(
         t("start_rebalance") + " 2",
         value=rebalance_2_default.date(),
         min_value=data.index.min().date(),
-        max_value=data.index.max().date()
+        max_value=data.index.max().date(),
+        help="Date when second rebalancing starts (recurs annually)"
     )
     
     # Rebalancing settings dictionary
@@ -1133,11 +1231,29 @@ with st.sidebar:
     # Storage costs
     st.subheader(t("storage_costs"))
     
-    storage_fee = st.number_input(t("annual_storage_fee"), value=1.5)
-    vat = st.number_input(t("vat"), value=19.0)
+    storage_fee = st.number_input(
+        t("annual_storage_fee"), 
+        value=1.5,
+        help="Annual percentage fee for storing metals"
+    )
+    
+    storage_frequency = st.selectbox(
+        "Storage Fee Frequency",
+        ["Annual", "Quarterly", "Monthly"],
+        index=0,
+        help="How often storage fees are charged"
+    )
+    
+    vat = st.number_input(
+        t("vat"), 
+        value=19.0,
+        help="VAT percentage charged on storage fees"
+    )
+    
     storage_metal = st.selectbox(
         t("storage_metal"),
-        ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"]
+        ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
+        help="Which metal(s) to sell to cover storage costs"
     )
     
     # Storage settings dictionary
@@ -1152,10 +1268,26 @@ with st.sidebar:
     
     with st.expander(t("margins_fees"), expanded=False):
         margins = {
-            "Gold": st.number_input(t("gold_margin"), value=15.6),
-            "Silver": st.number_input(t("silver_margin"), value=18.36),
-            "Platinum": st.number_input(t("platinum_margin"), value=24.24),
-            "Palladium": st.number_input(t("palladium_margin"), value=22.49)
+            "Gold": st.number_input(
+                t("gold_margin"), 
+                value=15.6,
+                help="Percentage markup when buying gold"
+            ),
+            "Silver": st.number_input(
+                t("silver_margin"), 
+                value=18.36,
+                help="Percentage markup when buying silver"
+            ),
+            "Platinum": st.number_input(
+                t("platinum_margin"), 
+                value=24.24,
+                help="Percentage markup when buying platinum"
+            ),
+            "Palladium": st.number_input(
+                t("palladium_margin"), 
+                value=22.49,
+                help="Percentage markup when buying palladium"
+            )
         }
     
     # Buyback prices
@@ -1163,10 +1295,30 @@ with st.sidebar:
     
     with st.expander(t("buyback_prices"), expanded=False):
         buyback_discounts = {
-            "Gold": st.number_input(t("gold_buyback"), value=-1.5, step=0.1),
-            "Silver": st.number_input(t("silver_buyback"), value=-3.0, step=0.1),
-            "Platinum": st.number_input(t("platinum_buyback"), value=-3.0, step=0.1),
-            "Palladium": st.number_input(t("palladium_buyback"), value=-3.0, step=0.1)
+            "Gold": st.number_input(
+                t("gold_buyback"), 
+                value=-1.5, 
+                step=0.1,
+                help="Percentage difference from spot price when selling gold"
+            ),
+            "Silver": st.number_input(
+                t("silver_buyback"), 
+                value=-3.0, 
+                step=0.1,
+                help="Percentage difference from spot price when selling silver"
+            ),
+            "Platinum": st.number_input(
+                t("platinum_buyback"), 
+                value=-3.0, 
+                step=0.1,
+                help="Percentage difference from spot price when selling platinum"
+            ),
+            "Palladium": st.number_input(
+                t("palladium_buyback"), 
+                value=-3.0, 
+                step=0.1,
+                help="Percentage difference from spot price when selling palladium"
+            )
         }
     
     # Rebalancing prices
@@ -1174,17 +1326,41 @@ with st.sidebar:
     
     with st.expander(t("rebalance_prices"), expanded=False):
         rebalance_markup = {
-            "Gold": st.number_input(t("gold_rebalance"), value=6.5, step=0.1),
-            "Silver": st.number_input(t("silver_rebalance"), value=6.5, step=0.1),
-            "Platinum": st.number_input(t("platinum_rebalance"), value=6.5, step=0.1),
-            "Palladium": st.number_input(t("palladium_rebalance"), value=6.5, step=0.1)
+            "Gold": st.number_input(
+                t("gold_rebalance"), 
+                value=6.5, 
+                step=0.1,
+                help="Percentage markup when buying gold during rebalancing"
+            ),
+            "Silver": st.number_input(
+                t("silver_rebalance"), 
+                value=6.5, 
+                step=0.1,
+                help="Percentage markup when buying silver during rebalancing"
+            ),
+            "Platinum": st.number_input(
+                t("platinum_rebalance"), 
+                value=6.5, 
+                step=0.1,
+                help="Percentage markup when buying platinum during rebalancing"
+            ),
+            "Palladium": st.number_input(
+                t("palladium_rebalance"), 
+                value=6.5, 
+                step=0.1,
+                help="Percentage markup when buying palladium during rebalancing"
+            )
         }
     
     # Advanced options
     st.subheader(t("advanced_options"))
     
     with st.expander(t("inflation_settings"), expanded=False):
-        use_custom_inflation = st.checkbox("Use custom inflation", value=False)
+        use_custom_inflation = st.checkbox(
+            "Use custom inflation", 
+            value=False,
+            help="Override the default inflation data"
+        )
         if use_custom_inflation:
             custom_inflation = {}
             with st.container():
@@ -1192,7 +1368,8 @@ with st.sidebar:
                     custom_inflation[year] = st.number_input(
                         f"{t('year')} {year} - {t('custom_inflation')}",
                         value=2.5,
-                        step=0.1
+                        step=0.1,
+                        help=f"Custom inflation rate for {year}"
                     )
     
     # Settings export/import
@@ -1206,6 +1383,7 @@ with st.sidebar:
             "purchase_amount": purchase_amount,
             "rebalance_settings": rebalance_settings,
             "storage_settings": storage_settings,
+            "storage_frequency": storage_frequency,
             "margins": margins,
             "buyback_discounts": buyback_discounts,
             "rebalance_markup": rebalance_markup
@@ -1226,13 +1404,17 @@ with st.sidebar:
     # Simulation button
     start_simulation = st.button(
         t("run_simulation"),
-        disabled=not dates_valid or total_allocation != 100
+        disabled=not dates_valid or total_allocation != 100,
+        help="Run the simulation with current settings"
     )
 
 # Main content area
 if total_allocation != 100:
     st.error(t("allocation_error").format(total_allocation))
     st.stop()
+
+# Create tabs for different views
+tab1, tab2, tab3, tab4 = st.tabs(["Portfolio Overview", "Detailed Analysis", "Metal Performance", "Data Export"])
 
 # Run simulation if button clicked or parameters changed
 if start_simulation or 'result' not in st.session_state:
@@ -1250,259 +1432,558 @@ if start_simulation or 'result' not in st.session_state:
             margins=margins,
             buyback_discounts=buyback_discounts,
             rebalance_markup=rebalance_markup,
-            inflation_data=inflation_real
+            inflation_data=inflation_real,
+            storage_frequency=storage_frequency
         )
         st.session_state.result = result
+        
+        # Calculate additional metrics
+        if not result.empty:
+            start_date = result.index.min()
+            end_date = result.index.max()
+            years = (end_date - start_date).days / 365.25
+            
+            capital_invested = result["Invested"].max()
+            portfolio_value = result["Portfolio Value"].iloc[-1]
+            
+            # Calculate annual return
+            if capital_invested > 0 and years > 0:
+                annual_return = (portfolio_value / capital_invested) ** (1 / years) - 1
+            else:
+                annual_return = 0.0
+            
+            st.session_state.metrics = {
+                "years": years,
+                "capital_invested": capital_invested,
+                "portfolio_value": portfolio_value,
+                "annual_return": annual_return,
+                "start_date": start_date,
+                "end_date": end_date
+            }
 
 # Use cached result if available
 result = st.session_state.result
+metrics = st.session_state.get("metrics", {})
 
-# Portfolio value chart
-fig = create_portfolio_chart(result, language)
-st.plotly_chart(fig, use_container_width=True)
-
-# Results Summary
-st.subheader(t("summary_title"))
-
-# Get dates and calculate investment period
-start_date = result.index.min()
-end_date = result.index.max()
-years = (end_date - start_date).days / 365.25
-
-# Oblicz wartość inwestycji i aktualny portfel
-capital_invested = result["Invested"].max()
-portfolio_value = result["Portfolio Value"].iloc[-1]
-
-# Oblicz roczną stopę zwrotu
-if capital_invested > 0 and years > 0:
-    annual_return = (portfolio_value / capital_invested) ** (1 / years) - 1
-else:
-    annual_return = 0.0
-
-# Metal price growth section
-st.subheader(t("price_growth"))
-
-start_prices = data.loc[start_date]
-end_prices = data.loc[end_date]
-
-growth_metrics = {}
-for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-    start_price = start_prices[metal + "_EUR"]
-    end_price = end_prices[metal + "_EUR"]
-    growth_pct = (end_price / start_price - 1) * 100
-    growth_metrics[metal] = growth_pct
-
-# Display growth metrics in columns
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric(t("gold"), f"{growth_metrics['Gold']:.2f}%", delta=f"{growth_metrics['Gold']:.1f}%")
-with col2:
-    st.metric(t("silver"), f"{growth_metrics['Silver']:.2f}%", delta=f"{growth_metrics['Silver']:.1f}%")
-with col3:
-    st.metric(t("platinum"), f"{growth_metrics['Platinum']:.2f}%", delta=f"{growth_metrics['Platinum']:.1f}%")
-with col4:
-    st.metric(t("palladium"), f"{growth_metrics['Palladium']:.2f}%", delta=f"{growth_metrics['Palladium']:.1f}%")
-
-# Current metal holdings
-st.subheader(t("current_holdings"))
-
-# Get final holdings
-final_holdings = {
-    "Gold": result.iloc[-1]["Gold"],
-    "Silver": result.iloc[-1]["Silver"],
-    "Platinum": result.iloc[-1]["Platinum"],
-    "Palladium": result.iloc[-1]["Palladium"]
-}
-
-# Define metal colors
-metal_colors = {
-    "Gold": "#D4AF37",
-    "Silver": "#C0C0C0",
-    "Platinum": "#E5E4E2",
-    "Palladium": "#CED0DD"
-}
-
-# Two-column layout: holdings metrics and pie chart
-col1, col2 = st.columns([3, 2])
-
-with col1:
-    # Display metals in a grid
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown(f"<h4 style='color:{metal_colors['Gold']}; text-align: center;'>{t('gold')}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{final_holdings['Gold']:.2f} g")
-        
-        st.markdown(f"<h4 style='color:{metal_colors['Platinum']}; text-align: center;'>{t('platinum')}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{final_holdings['Platinum']:.2f} g")
+# Tab 1: Portfolio Overview
+with tab1:
+    # Portfolio value chart
+    fig = create_portfolio_chart(result, language)
+    st.plotly_chart(fig, use_container_width=True)
     
-    with c2:
-        st.markdown(f"<h4 style='color:{metal_colors['Silver']}; text-align: center;'>{t('silver')}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{final_holdings['Silver']:.2f} g")
-        
-        st.markdown(f"<h4 style='color:{metal_colors['Palladium']}; text-align: center;'>{t('palladium')}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{final_holdings['Palladium']:.2f} g")
-
-with col2:
-    # Create pie chart of current portfolio value distribution
-    pie_fig = create_allocation_pie_chart(final_holdings, data.loc[end_date], language)
-    st.plotly_chart(pie_fig, use_container_width=True)
-
-# 📊 Podsumowanie inwestycji – nowa wersja
-
-st.markdown("---")
-st.title("📊 " + t("summary_title"))
-st.markdown("---")
-
-# Obliczenia podstawowe
-start_date = result.index.min()
-end_date = result.index.max()
-years = (end_date - start_date).days / 365.25
-
-capital_invested = result["Invested"].max()
-portfolio_value = result["Portfolio Value"].iloc[-1]
-
-# Oblicz roczną stopę zwrotu
-if capital_invested > 0 and years > 0:
-    annual_return = (portfolio_value / capital_invested) ** (1 / years) - 1
-else:
-    annual_return = 0.0
-
-# Oblicz wartość odtworzenia końcowego stanu depozytu
-purchase_replacement_value = 0.0
-for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-    grams = final_holdings[metal]
-    spot_price = data.loc[end_date][metal + "_EUR"]
-    margin_percent = margins[metal] / 100
-    buy_price = spot_price * (1 + margin_percent)
-    purchase_replacement_value += grams * buy_price
-
-# Oblicz średni roczny wzrost cen (ważony alokacją)
-weighted_start_price = sum(
-    allocation[metal] * data.loc[start_date][metal + "_EUR"]
-    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-)
-
-weighted_end_price = sum(
-    allocation[metal] * data.loc[end_date][metal + "_EUR"]
-    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-)
-
-if weighted_start_price > 0 and years > 0:
-    weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
-else:
-    weighted_avg_annual_growth = 0.0
-
-# 📋 Layout 2 kolumny
-col1, col2 = st.columns(2)
-
-with col1:
-    # Całkowita kwota inwestycji
-    st.metric(
-        t("capital_allocation"),
-        format_currency(capital_invested)
-    )
-
-    # Wartość metali po sprzedaży (zielona)
-    st.markdown(f"""
-    <div style="background-color: #E6F4EA; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-        <h4 style="color: green;">🛒 {t('purchase_value')}</h4>
-        <h2 style="color: green;">{format_currency(portfolio_value)}</h2>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    # Wartość odtworzenia końcowego stanu (czerwona)
-    st.markdown(f"""
-    <div style="background-color: #FDECEA; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-        <h4 style="color: red;">💎 {t('final_replacement_value')}</h4>
-        <h2 style="color: red;">{format_currency(purchase_replacement_value)}</h2>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Średni roczny wzrost cen (normalna metryka)
-    st.metric(
-        t("annual_growth_weighted"),
-        f"{weighted_avg_annual_growth * 100:.2f}%",
-        delta=f"{weighted_avg_annual_growth * 100:.1f}%"
-    )
-
-# Show yearly summary table
-st.subheader(t("yearly_view"))
-
-# Group by year and take first day
-result_yearly = result.groupby(result.index.year).first()
-
-# Create a simple table with selected columns
-yearly_table = pd.DataFrame({
-    t("invested_amount"): result_yearly["Invested"].round(0),
-    t("portfolio_value_short"): result_yearly["Portfolio Value"].round(0),
-    t("gold"): result_yearly["Gold"].round(2),
-    t("silver"): result_yearly["Silver"].round(2),
-    t("platinum"): result_yearly["Platinum"].round(2),
-    t("palladium"): result_yearly["Palladium"].round(2),
-    t("action"): result_yearly["Action"]
-})
-
-# Format currency columns
-yearly_table[t("invested_amount")] = yearly_table[t("invested_amount")].map(lambda x: f"{x:,.0f} EUR")
-yearly_table[t("portfolio_value_short")] = yearly_table[t("portfolio_value_short")].map(lambda x: f"{x:,.0f} EUR")
-
-# Display table with alternating row colors using custom CSS
-st.dataframe(yearly_table, use_container_width=True)
-
-# Storage costs summary
-st.subheader(t("storage_summary"))
-
-# Filter for storage fee entries
-storage_costs = result[result["Action"] == "storage_fee"]
-
-# Calculate total storage cost
-total_storage_cost = result["Storage Cost"].sum()
-
-# Liczenie średniorocznych kosztów magazynowania
-total_storage_cost = result["Storage Cost"].sum()
-
-if years > 0:
-    avg_annual_storage_cost = total_storage_cost / years
-else:
-    avg_annual_storage_cost = 0.0
-
-
-# Calculate percentage of current portfolio value
-if portfolio_value > 0:
-    storage_pct = (avg_annual_storage_cost / portfolio_value) * 100
-else:
-    storage_pct = 0.0
-
-# Display in columns
-col1, col2 = st.columns(2)
-with col1:
-    st.metric(t("annual_storage_cost"), format_currency(avg_annual_storage_cost))
-with col2:
-    st.metric(t("storage_cost_percent"), f"{storage_pct:.2f}%")
-
-# Export data option
-with st.expander(t("export_data"), expanded=False):
-    # Create download button for CSV
-    csv = result.to_csv()
-    st.download_button(
-        label="CSV Export",
-        data=csv,
-        file_name="precious_metals_simulation.csv",
-        mime="text/csv"
-    )
+    # Key Metrics
+    st.subheader("Key Metrics")
     
-    # Display raw data table with pagination
-    st.dataframe(result)
+    # Two-column layout for metrics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            "Total Investment",
+            format_currency(metrics.get("capital_invested", 0)),
+            help="Total amount invested over time"
+        )
+        
+        # Add total return metric
+        total_return = ((metrics.get("portfolio_value", 0) / metrics.get("capital_invested", 1)) - 1) * 100
+        st.metric(
+            "Total Return",
+            f"{total_return:.2f}%",
+            delta=f"{total_return:.1f}%",
+            help="Total percentage return on investment"
+        )
+    
+    with col2:
+        st.metric(
+            "Current Portfolio Value",
+            format_currency(metrics.get("portfolio_value", 0)),
+            help="Current value of your precious metals portfolio"
+        )
+        
+        # Add investment period
+        st.metric(
+            "Investment Period",
+            f"{metrics.get('years', 0):.1f} years",
+            help="Total investment period in years"
+        )
+        
+    with col3:
+        # Add annualized return
+        annual_return = metrics.get("annual_return", 0) * 100
+        st.metric(
+            "Annualized Return",
+            f"{annual_return:.2f}%",
+            delta=f"{annual_return:.1f}%",
+            help="Average yearly return on investment"
+        )
+        
+        # Add storage costs summary
+        total_storage = result["Storage Cost"].sum()
+        st.metric(
+            "Total Storage Costs",
+            format_currency(total_storage),
+            help="Total storage costs over investment period"
+        )
+    
+    # Current holdings section
+    st.subheader(t("current_holdings"))
+    
+    # Get final holdings
+    if not result.empty:
+        final_holdings = {
+            "Gold": result.iloc[-1]["Gold"],
+            "Silver": result.iloc[-1]["Silver"],
+            "Platinum": result.iloc[-1]["Platinum"],
+            "Palladium": result.iloc[-1]["Palladium"]
+        }
+        
+        # Define metal colors
+        metal_colors = {
+            "Gold": "#D4AF37",
+            "Silver": "#C0C0C0",
+            "Platinum": "#E5E4E2",
+            "Palladium": "#CED0DD"
+        }
+        
+        # Two-column layout: holdings metrics and pie chart
+        col1, col2 = st.columns([3, 2])
+        
+        with col1:
+            # Display metals in a grid
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"<h4 style='color:{metal_colors['Gold']}; text-align: center;'>{t('gold')}</h4>", unsafe_allow_html=True)
+                st.metric(label="", value=f"{final_holdings['Gold']:.2f} g")
+                
+                st.markdown(f"<h4 style='color:{metal_colors['Platinum']}; text-align: center;'>{t('platinum')}</h4>", unsafe_allow_html=True)
+                st.metric(label="", value=f"{final_holdings['Platinum']:.2f} g")
+            
+            with c2:
+                st.markdown(f"<h4 style='color:{metal_colors['Silver']}; text-align: center;'>{t('silver')}</h4>", unsafe_allow_html=True)
+                st.metric(label="", value=f"{final_holdings['Silver']:.2f} g")
+                
+                st.markdown(f"<h4 style='color:{metal_colors['Palladium']}; text-align: center;'>{t('palladium')}</h4>", unsafe_allow_html=True)
+                st.metric(label="", value=f"{final_holdings['Palladium']:.2f} g")
+        
+        with col2:
+            # Create pie chart of current portfolio value distribution
+            if not result.empty:
+                end_date = result.index.max()
+                pie_fig = create_allocation_pie_chart(final_holdings, data.loc[end_date], language)
+                st.plotly_chart(pie_fig, use_container_width=True)
 
-# Footer with disclaimer
+# Tab 2: Detailed Analysis
+with tab2:
+    st.subheader("Detailed Portfolio Analysis")
+    
+    # Calculate metal price growth
+    if not result.empty:
+        start_date = result.index.min()
+        end_date = result.index.max()
+        
+        start_prices = data.loc[start_date]
+        end_prices = data.loc[end_date]
+        
+        growth_metrics = {}
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+            start_price = start_prices[metal + "_EUR"]
+            end_price = end_prices[metal + "_EUR"]
+            growth_pct = (end_price / start_price - 1) * 100
+            growth_metrics[metal] = growth_pct
+        
+        # Metal price growth section
+        st.subheader(t("price_growth"))
+        
+        # Display growth metrics in columns
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric(t("gold"), f"{growth_metrics['Gold']:.2f}%", delta=f"{growth_metrics['Gold']:.1f}%")
+        with col2:
+            st.metric(t("silver"), f"{growth_metrics['Silver']:.2f}%", delta=f"{growth_metrics['Silver']:.1f}%")
+        with col3:
+            st.metric(t("platinum"), f"{growth_metrics['Platinum']:.2f}%", delta=f"{growth_metrics['Platinum']:.1f}%")
+        with col4:
+            st.metric(t("palladium"), f"{growth_metrics['Palladium']:.2f}%", delta=f"{growth_metrics['Palladium']:.1f}%")
+    
+    # Calculate value comparison
+    if not result.empty:
+        # Get final holdings
+        final_holdings = {
+            "Gold": result.iloc[-1]["Gold"],
+            "Silver": result.iloc[-1]["Silver"],
+            "Platinum": result.iloc[-1]["Platinum"],
+            "Palladium": result.iloc[-1]["Palladium"]
+        }
+        
+        end_date = result.index.max()
+        end_prices = data.loc[end_date]
+        
+        capital_invested = result["Invested"].max()
+        portfolio_value = result["Portfolio Value"].iloc[-1]
+        
+        # Calculate replacement value
+        purchase_replacement_value = 0.0
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+            grams = final_holdings[metal]
+            spot_price = end_prices[metal + "_EUR"]
+            margin_percent = margins[metal] / 100
+            buy_price = spot_price * (1 + margin_percent)
+            purchase_replacement_value += grams * buy_price
+        
+        # Calculate weighted average growth
+        weighted_start_price = sum(
+            allocation[metal] * data.loc[start_date][metal + "_EUR"]
+            for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+        )
+        
+        weighted_end_price = sum(
+            allocation[metal] * data.loc[end_date][metal + "_EUR"]
+            for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+        )
+        
+        years = (end_date - start_date).days / 365.25
+        
+        if weighted_start_price > 0 and years > 0:
+            weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
+        else:
+            weighted_avg_annual_growth = 0.0
+        
+        # Display value comparison
+        st.subheader("Value Comparison")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Investment vs Portfolio Value
+            st.markdown(f"""
+            <div style="background-color: #E6F4EA; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <h4 style="color: green;">🛒 {t('purchase_value')}</h4>
+                <h2 style="color: green;">{format_currency(portfolio_value)}</h2>
+                <p>vs. Investment: {format_currency(capital_invested)}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            # Replacement Value
+            st.markdown(f"""
+            <div style="background-color: #FDECEA; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <h4 style="color: red;">💎 Replacement Value</h4>
+                <h2 style="color: red;">{format_currency(purchase_replacement_value)}</h2>
+                <p>Cost to rebuy current holdings at retail prices</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Average annual growth metric
+        st.metric(
+            t("annual_growth_weighted"),
+            f"{weighted_avg_annual_growth * 100:.2f}%",
+            delta=f"{weighted_avg_annual_growth * 100:.1f}%"
+        )
+    
+    # Show yearly summary table with improved formatting
+    st.subheader(t("yearly_view"))
+    
+    if not result.empty:
+        # Group by year and take first day
+        result_yearly = result.groupby(result.index.year).first()
+        
+        # Create a simple table with selected columns
+        yearly_table = pd.DataFrame({
+            t("year"): result_yearly.index,
+            t("invested_amount"): result_yearly["Invested"].round(0),
+            t("portfolio_value_short"): result_yearly["Portfolio Value"].round(0),
+            t("gold"): result_yearly["Gold"].round(2),
+            t("silver"): result_yearly["Silver"].round(2),
+            t("platinum"): result_yearly["Platinum"].round(2),
+            t("palladium"): result_yearly["Palladium"].round(2),
+            t("action"): result_yearly["Action"]
+        })
+        
+        # Format currency columns
+        yearly_table[t("invested_amount")] = yearly_table[t("invested_amount")].map(lambda x: f"{x:,.0f} EUR")
+        yearly_table[t("portfolio_value_short")] = yearly_table[t("portfolio_value_short")].map(lambda x: f"{x:,.0f} EUR")
+        
+        # Display table with improved styling
+        st.dataframe(
+            yearly_table,
+            use_container_width=True,
+            column_config={
+                t("year"): st.column_config.NumberColumn(format="%d"),
+                t("invested_amount"): st.column_config.TextColumn("Invested (EUR)"),
+                t("portfolio_value_short"): st.column_config.TextColumn("Portfolio Value (EUR)"),
+                t("gold"): st.column_config.NumberColumn("Gold (g)", format="%.2f g"),
+                t("silver"): st.column_config.NumberColumn("Silver (g)", format="%.2f g"),
+                t("platinum"): st.column_config.NumberColumn("Platinum (g)", format="%.2f g"),
+                t("palladium"): st.column_config.NumberColumn("Palladium (g)", format="%.2f g"),
+                t("action"): st.column_config.TextColumn("Actions")
+            },
+            hide_index=True
+        )
+    
+    # Storage costs summary with improved visualization
+    st.subheader(t("storage_summary"))
+    
+    if not result.empty:
+        # Filter for storage fee entries
+        storage_costs = result[result["Action"].str.contains("fee")]
+        
+        # Calculate total storage cost
+        total_storage_cost = result["Storage Cost"].sum()
+        
+        # Calculate average annual storage cost
+        years = (result.index.max() - result.index.min()).days / 365.25
+        
+        if years > 0:
+            avg_annual_storage_cost = total_storage_cost / years
+        else:
+            avg_annual_storage_cost = 0.0
+        
+        # Calculate percentage of current portfolio value
+        portfolio_value = result["Portfolio Value"].iloc[-1]
+        if portfolio_value > 0:
+            storage_pct = (avg_annual_storage_cost / portfolio_value) * 100
+        else:
+            storage_pct = 0.0
+        
+        # Display in columns
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric(t("annual_storage_cost"), format_currency(avg_annual_storage_cost))
+        with col2:
+            st.metric(t("storage_cost_percent"), f"{storage_pct:.2f}%")
+        
+        # Add storage cost visualization if there are storage costs
+        if total_storage_cost > 0:
+            # Create a bar chart of storage costs by year
+            storage_by_year = storage_costs.groupby(storage_costs.index.year)["Storage Cost"].sum()
+            
+            fig = go.Figure(data=[
+                go.Bar(
+                    x=storage_by_year.index,
+                    y=storage_by_year.values,
+                    marker_color='indianred'
+                )
+            ])
+            
+            fig.update_layout(
+                title="Storage Costs by Year",
+                xaxis_title="Year",
+                yaxis_title="Storage Cost (EUR)",
+                height=400
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+
+# Tab 3: Metal Performance Comparison
+with tab3:
+    st.subheader("Metal Performance Comparison")
+    
+    if not result.empty:
+        start_date = result.index.min()
+        end_date = result.index.max()
+        
+        # Create and display the performance chart
+        perf_fig = create_metal_performance_chart(start_date, end_date, allocation)
+        st.plotly_chart(perf_fig, use_container_width=True)
+        
+        # Add correlation matrix
+        st.subheader("Metal Price Correlation Matrix")
+        
+        # Get price data for the period
+        price_data = data.loc[start_date:end_date, ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]]
+        
+        # Calculate returns
+        returns = price_data.pct_change().dropna()
+        
+        # Calculate correlation matrix
+        corr_matrix = returns.corr()
+        
+        # Create heatmap
+        fig = go.Figure(data=go.Heatmap(
+            z=corr_matrix.values,
+            x=["Gold", "Silver", "Platinum", "Palladium"],
+            y=["Gold", "Silver", "Platinum", "Palladium"],
+            colorscale="RdBu",
+            zmid=0,
+            text=corr_matrix.round(2).values,
+            texttemplate="%{text}",
+            textfont={"size":14}
+        ))
+        
+        fig.update_layout(
+            title="Correlation of Metal Price Returns",
+            height=500
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Historical perspective
+        st.subheader("Historical Price Ranges")
+        
+        # Calculate historical stats
+        historic_stats = {}
+        for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+            prices = data[f"{metal}_EUR"]
+            historic_stats[metal] = {
+                "min": prices.min(),
+                "max": prices.max(),
+                "mean": prices.mean(),
+                "start": prices.loc[start_date],
+                "end": prices.loc[end_date],
+                "volatility": prices.pct_change().std() * (252 ** 0.5) * 100  # Annualized volatility
+            }
+        
+        # Display historical stats
+        stats_df = pd.DataFrame(index=["Gold", "Silver", "Platinum", "Palladium"])
+        stats_df["Min Price (EUR)"] = [historic_stats[m]["min"] for m in stats_df.index]
+        stats_df["Max Price (EUR)"] = [historic_stats[m]["max"] for m in stats_df.index]
+        stats_df["Mean Price (EUR)"] = [historic_stats[m]["mean"] for m in stats_df.index]
+        stats_df["Start Price (EUR)"] = [historic_stats[m]["start"] for m in stats_df.index]
+        stats_df["End Price (EUR)"] = [historic_stats[m]["end"] for m in stats_df.index]
+        stats_df["Volatility (%)"] = [historic_stats[m]["volatility"] for m in stats_df.index]
+        
+        st.dataframe(
+            stats_df.round(2),
+            use_container_width=True,
+            column_config={
+                "Min Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Max Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Mean Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Start Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "End Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Volatility (%)": st.column_config.NumberColumn(format="%.2f%%")
+            }
+        )
+
+# Tab 4: Data Export
+with tab4:
+    st.subheader(t("export_data"))
+    
+    if not result.empty:
+        # Create tabs for different export formats
+        export_tab1, export_tab2, export_tab3 = st.tabs(["CSV Export", "PDF Report", "Raw Data"])
+        
+        with export_tab1:
+            # Create download button for CSV
+            csv = result.to_csv()
+            st.download_button(
+                label="Download CSV",
+                data=csv,
+                file_name="precious_metals_simulation.csv",
+                mime="text/csv",
+                help="Download the full simulation data as CSV"
+            )
+            
+            # Add option to export yearly summary
+            yearly_csv = result.groupby(result.index.year).first().to_csv()
+            st.download_button(
+                label="Download Yearly Summary CSV",
+                data=yearly_csv,
+                file_name="precious_metals_yearly_summary.csv",
+                mime="text/csv",
+                help="Download yearly summary data as CSV"
+            )
+        
+        with export_tab2:
+            # Create PDF report
+            if not result.empty:
+                start_date = result.index.min()
+                end_date = result.index.max()
+                
+                # Get portfolio value chart for PDF
+                pdf_fig = create_portfolio_chart(result, language)
+                
+                # Create portfolio summary data
+                portfolio_summary = {
+                    "Investment Period": f"{(end_date - start_date).days / 365.25:.2f} years",
+                    "Total Invested": format_currency(result["Invested"].max()),
+                    "Final Portfolio Value": format_currency(result["Portfolio Value"].iloc[-1]),
+                    "Total Return": f"{((result['Portfolio Value'].iloc[-1] / result['Invested'].max()) - 1) * 100:.2f}%",
+                    "Gold Holdings": f"{result.iloc[-1]['Gold']:.2f} g",
+                    "Silver Holdings": f"{result.iloc[-1]['Silver']:.2f} g",
+                    "Platinum Holdings": f"{result.iloc[-1]['Platinum']:.2f} g",
+                    "Palladium Holdings": f"{result.iloc[-1]['Palladium']:.2f} g"
+                }
+                
+                # Generate PDF download link
+                pdf_html = create_pdf_download_link(pdf_fig, portfolio_summary)
+                st.markdown(pdf_html, unsafe_allow_html=True)
+        
+        with export_tab3:
+            # Display raw data table with pagination
+            st.subheader("Complete Simulation Data")
+            
+            # Add filtering options
+            action_filter = st.multiselect(
+                "Filter by Action",
+                options=result["Action"].unique().tolist(),
+                default=[],
+                help="Select specific actions to filter the data"
+            )
+            
+            if action_filter:
+                filtered_result = result[result["Action"].isin(action_filter)]
+            else:
+                filtered_result = result
+            
+            # Display filtered data
+            st.dataframe(
+                filtered_result,
+                use_container_width=True,
+                height=500
+            )
+
+# Footer with disclaimer and additional help
 st.markdown("---")
+with st.expander("Help & Information"):
+    st.markdown("""
+    ## About This Simulator
+    
+    This Precious Metals Portfolio Simulator allows you to model investment strategies for gold, silver, platinum, and palladium over time. Key features include:
+    
+    - **Initial and recurring investments** with customizable frequencies
+    - **Portfolio rebalancing** to maintain your target allocation
+    - **Storage cost simulation** with different fee schedules
+    - **Real price data** for accurate historical modeling
+    - **Inflation adjustment** to see your real returns
+    
+    ## How to Use
+    
+    1. Set your investment parameters in the sidebar
+    2. Ensure your metal allocation adds up to 100%
+    3. Click "Run Simulation" to see the results
+    4. Explore different tabs for various analyses
+    5. Export your results for further analysis
+    
+    ## Data Sources
+    
+    The simulator uses LBMA (London Bullion Market Association) price data for the precious metals and country-specific inflation data.
+    
+    ## Disclaimer
+    
+    This simulation is for educational purposes only. Past performance does not guarantee future results. Always consult with a qualified financial advisor before making investment decisions.
+    """)
+
 st.caption("Disclaimer: This simulation is for educational purposes only. Past performance does not guarantee future results.")
-
-# =========================================
-# MAIN EXECUTION
-# =========================================
-
-if __name__ == "__main__":
-    # App is already running through Streamlit's script execution
-    pass
+st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025") first rebalancing
+            if (rebalance_settings["rebalance_1"] and 
+                date >= pd.to_datetime(rebalance_settings["rebalance_1_start"]) and 
+                date.month == rebalance_settings["rebalance_1_start"].month and 
+                date.day == rebalance_settings["rebalance_1_start"].day):
+                
+                portfolio, rebalance_action = apply_rebalance(
+                    date, 
+                    portfolio,
+                    allocation,
+                    data.loc[date],
+                    "rebalance_1", 
+                    rebalance_settings["rebalance_1_condition"], 
+                    rebalance_settings["rebalance_1_threshold"],
+                    buyback_discounts,
+                    rebalance_markup,
+                    last_rebalance_dates
+                )
+                
+                actions.append(rebalance_action)
+            
+            # Check for
