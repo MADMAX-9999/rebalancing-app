@@ -1966,10 +1966,3 @@ with st.expander("Help & Information"):
 
 st.caption("Disclaimer: This simulation is for educational purposes only. Past performance does not guarantee future results.")
 st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025")
-        
-                
-    
-                
-     actions.append(rebalance_action)
-            
-            # Check for
