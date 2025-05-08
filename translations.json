@@ -139,17 +139,6 @@
     "end_price": "Cena Końcowa (EUR)",
     "volatility": "Zmienność (%)",
     "storage_costs_by_year": "Koszty Magazynowania wg Roku"
-    "with_customizable_frequencies": "z możliwością dostosowania częstotliwości",
-    "to_maintain_target_allocation": "aby utrzymać docelową alokację",
-    "with_different_fee_schedules": "z różnymi harmonogramami opłat",
-    "for_accurate_historical_modeling": "dla dokładnego modelowania historycznego",
-    "to_see_real_returns": "aby zobaczyć realne zwroty",
-    "set_parameters_in_sidebar": "Ustaw parametry inwestycji w bocznym panelu",
-    "ensure_allocation_100": "Upewnij się, że alokacja metali wynosi dokładnie 100%",
-    "click_run_simulation": "Kliknij 'Uruchom symulację', aby zobaczyć wyniki",
-    "explore_different_tabs": "Eksploruj różne zakładki, aby zobaczyć różne analizy",
-    "export_results": "Eksportuj wyniki do dalszej analizy",
-    "may": "maj"
   },
   "Deutsch": {
     "app_title": "Edelmetallportfolio ReBalancing Simulator",
@@ -291,17 +280,6 @@
     "end_price": "Endpreis (EUR)",
     "volatility": "Volatilität (%)",
     "storage_costs_by_year": "Lagerkosten nach Jahr"
-    "with_customizable_frequencies": "mit anpassbaren Häufigkeiten",
-    "to_maintain_target_allocation": "um Ihre Zielallokation zu erhalten",
-    "with_different_fee_schedules": "mit verschiedenen Gebührenmodellen",
-    "for_accurate_historical_modeling": "für genaue historische Modellierung",
-    "to_see_real_returns": "um reale Renditen zu sehen",
-    "set_parameters_in_sidebar": "Legen Sie Ihre Anlageparameter in der Seitenleiste fest",
-    "ensure_allocation_100": "Stellen Sie sicher, dass Ihre Metallzuteilung genau 100% beträgt",
-    "click_run_simulation": "Klicken Sie auf 'Simulation starten', um die Ergebnisse zu sehen",
-    "explore_different_tabs": "Erkunden Sie verschiedene Registerkarten für verschiedene Analysen",
-    "export_results": "Exportieren Sie Ihre Ergebnisse zur weiteren Analyse",
-    "may": "Mai"
   },
   "English": {
     "app_title": "Precious Metals Portfolio Rebalancing Simulator",
@@ -443,17 +421,5 @@
     "end_price": "End Price (EUR)",
     "volatility": "Volatility (%)",
     "storage_costs_by_year": "Storage Costs by Year"
-    "with_customizable_frequencies": "with customizable frequencies",
-    "to_maintain_target_allocation": "to maintain your target allocation",
-    "with_different_fee_schedules": "with different fee schedules",
-    "for_accurate_historical_modeling": "for accurate historical modeling",
-    "to_see_real_returns": "to see your real returns",
-    "set_parameters_in_sidebar": "Set your investment parameters in the sidebar",
-    "ensure_allocation_100": "Ensure your metal allocation adds up to 100%",
-    "click_run_simulation": "Click 'Run Simulation' to see the results",
-    "explore_different_tabs": "Explore different tabs for various analyses",
-    "export_results": "Export your results for further analysis",
-    "may": "May"
   }
 }
-
