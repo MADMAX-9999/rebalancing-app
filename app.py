@@ -545,10 +545,6 @@ def apply_rebalance(date, portfolio, allocation, prices, label, condition_enable
             buy_grams = min(cash / buy_price, diff / buy_price)
             portfolio[metal] += buy_grams
             cash -= buy_grams * buy_price
-    
-    # Update last rebalance date in the caller's dictionary
-    last_rebalance_dates[label] = date
-    return portfolio, label
 
 def apply_storage_costs(date, portfolio, invested, storage_settings, buyback_discounts, last_year):
     """Apply annual storage costs by selling metals"""
