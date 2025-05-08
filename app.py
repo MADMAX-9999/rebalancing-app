@@ -1,4 +1,4 @@
-
+# precious_metals_portfolio_simulator.py
 
 import streamlit as st
 import pandas as pd
@@ -978,7 +978,7 @@ def create_metal_performance_chart(start_date, end_date, allocation):
     
     # Update layout
     fig.update_layout(
-        title=t("performance_chart_title"),
+        title="Metal Price Performance (indexed to 100)",
         xaxis_title="Date",
         yaxis_title="Price Index (Start = 100)",
         height=500,
@@ -1475,14 +1475,14 @@ with tab1:
     st.plotly_chart(fig, use_container_width=True)
     
     # Key Metrics
-    st.subheader(t("key_metrics"))
+    st.subheader("Key Metrics")
     
     # Two-column layout for metrics
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.metric(
-            t("total_investment"),
+            "Total Investment",
             format_currency(metrics.get("capital_invested", 0)),
             help="Total amount invested over time"
         )
@@ -1490,7 +1490,7 @@ with tab1:
         # Add total return metric
         total_return = ((metrics.get("portfolio_value", 0) / metrics.get("capital_invested", 1)) - 1) * 100
         st.metric(
-            t("total_return_metric"),
+            "Total Return",
             f"{total_return:.2f}%",
             delta=f"{total_return:.1f}%",
             help="Total percentage return on investment"
@@ -1498,15 +1498,15 @@ with tab1:
     
     with col2:
         st.metric(
-            t("current_portfolio_value"),
+            "Current Portfolio Value",
             format_currency(metrics.get("portfolio_value", 0)),
             help="Current value of your precious metals portfolio"
         )
         
         # Add investment period
         st.metric(
-            t("investment_period"),
-            f"{metrics.get('years', 0):.1f} " + t("year"),
+            "Investment Period",
+            f"{metrics.get('years', 0):.1f} years",
             help="Total investment period in years"
         )
         
@@ -1514,7 +1514,7 @@ with tab1:
         # Add annualized return
         annual_return = metrics.get("annual_return", 0) * 100
         st.metric(
-            t("annualized_return_metric"),
+            "Annualized Return",
             f"{annual_return:.2f}%",
             delta=f"{annual_return:.1f}%",
             help="Average yearly return on investment"
@@ -1523,7 +1523,7 @@ with tab1:
         # Add storage costs summary
         total_storage = result["Storage Cost"].sum()
         st.metric(
-            t("total_storage_costs"),
+            "Total Storage Costs",
             format_currency(total_storage),
             help="Total storage costs over investment period"
         )
@@ -1779,7 +1779,7 @@ with tab2:
 
 # Tab 3: Metal Performance Comparison
 with tab3:
-    st.subheader(t("metal_performance_comparison"))
+    st.subheader("Metal Performance Comparison")
     
     if not result.empty:
         start_date = result.index.min()
@@ -1790,7 +1790,7 @@ with tab3:
         st.plotly_chart(perf_fig, use_container_width=True)
         
         # Add correlation matrix
-        st.subheader(t("correlation_matrix"))
+        st.subheader("Metal Price Correlation Matrix")
         
         # Get price data for the period
         price_data = data.loc[start_date:end_date, ["Gold_EUR", "Silver_EUR", "Platinum_EUR", "Palladium_EUR"]]
@@ -1814,14 +1814,14 @@ with tab3:
         ))
         
         fig.update_layout(
-            title=t("correlation_title"),
+            title="Correlation of Metal Price Returns",
             height=500
         )
         
         st.plotly_chart(fig, use_container_width=True)
         
         # Historical perspective
-        st.subheader(t("historical_price_ranges"))
+        st.subheader("Historical Price Ranges")
         
         # Calculate historical stats
         historic_stats = {}
@@ -1838,23 +1838,23 @@ with tab3:
         
         # Display historical stats
         stats_df = pd.DataFrame(index=["Gold", "Silver", "Platinum", "Palladium"])
-        stats_df[t("min_price")] = [historic_stats[m]["min"] for m in stats_df.index]
-        stats_df[t("max_price")] = [historic_stats[m]["max"] for m in stats_df.index]
-        stats_df[t("mean_price")] = [historic_stats[m]["mean"] for m in stats_df.index]
-        stats_df[t("start_price")] = [historic_stats[m]["start"] for m in stats_df.index]
-        stats_df[t("end_price")] = [historic_stats[m]["end"] for m in stats_df.index]
-        stats_df[t("volatility")] = [historic_stats[m]["volatility"] for m in stats_df.index]
+        stats_df["Min Price (EUR)"] = [historic_stats[m]["min"] for m in stats_df.index]
+        stats_df["Max Price (EUR)"] = [historic_stats[m]["max"] for m in stats_df.index]
+        stats_df["Mean Price (EUR)"] = [historic_stats[m]["mean"] for m in stats_df.index]
+        stats_df["Start Price (EUR)"] = [historic_stats[m]["start"] for m in stats_df.index]
+        stats_df["End Price (EUR)"] = [historic_stats[m]["end"] for m in stats_df.index]
+        stats_df["Volatility (%)"] = [historic_stats[m]["volatility"] for m in stats_df.index]
         
         st.dataframe(
             stats_df.round(2),
             use_container_width=True,
             column_config={
-                t("min_price"): st.column_config.NumberColumn(format="%.2f €"),
-                t("max_price"): st.column_config.NumberColumn(format="%.2f €"),
-                t("mean_price"): st.column_config.NumberColumn(format="%.2f €"),
-                t("start_price"): st.column_config.NumberColumn(format="%.2f €"),
-                t("end_price"): st.column_config.NumberColumn(format="%.2f €"),
-                t("volatility"): st.column_config.NumberColumn(format="%.2f%%")
+                "Min Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Max Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Mean Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Start Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "End Price (EUR)": st.column_config.NumberColumn(format="%.2f €"),
+                "Volatility (%)": st.column_config.NumberColumn(format="%.2f%%")
             }
         )
 
@@ -1864,13 +1864,13 @@ with tab4:
     
     if not result.empty:
         # Create tabs for different export formats
-        export_tab1, export_tab2, export_tab3 = st.tabs([t("csv_export"), t("pdf_report"), t("raw_data")])
+        export_tab1, export_tab2, export_tab3 = st.tabs(["CSV Export", "PDF Report", "Raw Data"])
         
         with export_tab1:
             # Create download button for CSV
             csv = result.to_csv()
             st.download_button(
-                label=t("download_csv"),
+                label="Download CSV",
                 data=csv,
                 file_name="precious_metals_simulation.csv",
                 mime="text/csv",
@@ -1880,7 +1880,7 @@ with tab4:
             # Add option to export yearly summary
             yearly_csv = result.groupby(result.index.year).first().to_csv()
             st.download_button(
-                label=t("download_yearly_csv"),
+                label="Download Yearly Summary CSV",
                 data=yearly_csv,
                 file_name="precious_metals_yearly_summary.csv",
                 mime="text/csv",
@@ -1898,14 +1898,14 @@ with tab4:
                 
                 # Create portfolio summary data
                 portfolio_summary = {
-                    t("investment_period"): f"{(end_date - start_date).days / 365.25:.2f} {t('year')}",
-                    t("total_investment"): format_currency(result["Invested"].max()),
-                    t("portfolio_value"): format_currency(result["Portfolio Value"].iloc[-1]),
-                    t("total_return"): f"{((result['Portfolio Value'].iloc[-1] / result['Invested'].max()) - 1) * 100:.2f}%",
-                    t("gold"): f"{result.iloc[-1]['Gold']:.2f} g",
-                    t("silver"): f"{result.iloc[-1]['Silver']:.2f} g",
-                    t("platinum"): f"{result.iloc[-1]['Platinum']:.2f} g",
-                    t("palladium"): f"{result.iloc[-1]['Palladium']:.2f} g"
+                    "Investment Period": f"{(end_date - start_date).days / 365.25:.2f} years",
+                    "Total Invested": format_currency(result["Invested"].max()),
+                    "Final Portfolio Value": format_currency(result["Portfolio Value"].iloc[-1]),
+                    "Total Return": f"{((result['Portfolio Value'].iloc[-1] / result['Invested'].max()) - 1) * 100:.2f}%",
+                    "Gold Holdings": f"{result.iloc[-1]['Gold']:.2f} g",
+                    "Silver Holdings": f"{result.iloc[-1]['Silver']:.2f} g",
+                    "Platinum Holdings": f"{result.iloc[-1]['Platinum']:.2f} g",
+                    "Palladium Holdings": f"{result.iloc[-1]['Palladium']:.2f} g"
                 }
                 
                 # Generate PDF download link
@@ -1914,11 +1914,11 @@ with tab4:
         
         with export_tab3:
             # Display raw data table with pagination
-            st.subheader(t("complete_simulation_data"))
+            st.subheader("Complete Simulation Data")
             
             # Add filtering options
             action_filter = st.multiselect(
-                t("filter_by_action"),
+                "Filter by Action",
                 options=result["Action"].unique().tolist(),
                 default=[],
                 help="Select specific actions to filter the data"
@@ -1938,33 +1938,37 @@ with tab4:
 
 # Footer with disclaimer and additional help
 st.markdown("---")
-with st.expander(t("help_information")):
-    st.markdown(f"""
-    ## {t("about_simulator")}
+with st.expander("Help & Information"):
+    st.markdown("""
+    ## About This Simulator
     
-    {t("simulator_description")}
+    This Precious Metals Portfolio Simulator allows you to model investment strategies for gold, silver, platinum, and palladium over time. Key features include:
     
-    - **{t("investment_amounts")}** {t("with_customizable_frequencies")}
-    - **{t("rebalancing")}** {t("to_maintain_target_allocation")}
-    - **{t("storage_costs")}** {t("with_different_fee_schedules")}
-    - **{t("real_price_data")}** {t("for_accurate_historical_modeling")}
-    - **{t("inflation_settings")}** {t("to_see_real_returns")}
+    - **Initial and recurring investments** with customizable frequencies
+    - **Portfolio rebalancing** to maintain your target allocation
+    - **Storage cost simulation** with different fee schedules
+    - **Real price data** for accurate historical modeling
+    - **Inflation adjustment** to see your real returns
     
-    ## {t("how_to_use")}
+    ## How to Use
     
-    1. {t("set_parameters_in_sidebar")}
-    2. {t("ensure_allocation_100")}
-    3. {t("click_run_simulation")}
-    4. {t("explore_different_tabs")}
-    5. {t("export_results")}
+    1. Set your investment parameters in the sidebar
+    2. Ensure your metal allocation adds up to 100%
+    3. Click "Run Simulation" to see the results
+    4. Explore different tabs for various analyses
+    5. Export your results for further analysis
     
-    ## {t("data_sources")}
+    ## Data Sources
     
-    {t("data_sources_description")}
+    The simulator uses LBMA (London Bullion Market Association) price data for the precious metals and country-specific inflation data.
+    
+    ## Disclaimer
+    
+    This simulation is for educational purposes only. Past performance does not guarantee future results. Always consult with a qualified financial advisor before making investment decisions.
     """)
 
-st.caption(t("disclaimer"))
-st.caption(f"{t('app_version')}: {APP_CONFIG['version']} | {t('last_updated')}: {t('may')} 2025")
+st.caption("Disclaimer: This simulation is for educational purposes only. Past performance does not guarantee future results.")
+st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025")
             if (rebalance_settings["rebalance_1"] and 
                 date >= pd.to_datetime(rebalance_settings["rebalance_1_start"]) and 
                 date.month == rebalance_settings["rebalance_1_start"].month and 
