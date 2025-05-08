@@ -1968,19 +1968,8 @@ st.caption("Disclaimer: This simulation is for educational purposes only. Past p
 st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025")
         
                 
-                portfolio, rebalance_action = apply_rebalance(
-                    date, 
-                    portfolio,
-                    allocation,
-                    data.loc[date],
-                    "rebalance_1", 
-                    rebalance_settings["rebalance_1_condition"], 
-                    rebalance_settings["rebalance_1_threshold"],
-                    buyback_discounts,
-                    rebalance_markup,
-                    last_rebalance_dates
-                )
+    
                 
-                actions.append(rebalance_action)
+     actions.append(rebalance_action)
             
             # Check for
