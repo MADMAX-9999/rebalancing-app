@@ -545,6 +545,10 @@ def apply_rebalance(date, portfolio, allocation, prices, label, condition_enable
             buy_grams = min(cash / buy_price, diff / buy_price)
             portfolio[metal] += buy_grams
             cash -= buy_grams * buy_price
+    
+    # Update last rebalance date in the caller's dictionary
+    last_rebalance_dates[label] = date
+    return portfolio, label
 
 def apply_storage_costs(date, portfolio, invested, storage_settings, buyback_discounts, last_year):
     """Apply annual storage costs by selling metals"""
@@ -1151,66 +1155,67 @@ with st.sidebar:
     # Rebalancing settings
     st.subheader(t("rebalancing"))
     
-    # Default rebalancing dates based on initial date
-    rebalance_base_year = initial_date.year + 1
-    rebalance_1_default = datetime(rebalance_base_year, 4, 1)
-    rebalance_2_default = datetime(rebalance_base_year, 10, 1)
-    
-    # First rebalancing
-    rebalance_1 = st.checkbox(
-        t("rebalance_1"), 
-        value=True,
-        help="Enable the first annual rebalancing event"
-    )
-    rebalance_1_condition = st.checkbox(
-        t("deviation_condition") + " 1", 
-        value=False,
-        help="Only rebalance if allocation deviates beyond threshold"
-    )
-    rebalance_1_threshold = st.number_input(
-        t("deviation_threshold") + " 1",
-        min_value=0.0,
-        max_value=100.0,
-        value=12.0,
-        step=0.5,
-        help="Percentage deviation that triggers rebalancing"
-    )
-    
-    rebalance_1_start = st.date_input(
-        t("start_rebalance") + " 1",
-        value=rebalance_1_default.date(),
-        min_value=data.index.min().date(),
-        max_value=data.index.max().date(),
-        help="Date when first rebalancing starts (recurs annually)"
-    )
-    
-    # Second rebalancing
-    rebalance_2 = st.checkbox(
-        t("rebalance_2"), 
-        value=False,
-        help="Enable a second annual rebalancing event"
-    )
-    rebalance_2_condition = st.checkbox(
-        t("deviation_condition") + " 2", 
-        value=False,
-        help="Only rebalance if allocation deviates beyond threshold"
-    )
-    rebalance_2_threshold = st.number_input(
-        t("deviation_threshold") + " 2",
-        min_value=0.0,
-        max_value=100.0,
-        value=12.0,
-        step=0.5,
-        help="Percentage deviation that triggers rebalancing"
-    )
-    
-    rebalance_2_start = st.date_input(
-        t("start_rebalance") + " 2",
-        value=rebalance_2_default.date(),
-        min_value=data.index.min().date(),
-        max_value=data.index.max().date(),
-        help="Date when second rebalancing starts (recurs annually)"
-    )
+    with st.expander(t("rebalancing"), expanded=False):
+        # Default rebalancing dates based on initial date
+        rebalance_base_year = initial_date.year + 1
+        rebalance_1_default = datetime(rebalance_base_year, 4, 1)
+        rebalance_2_default = datetime(rebalance_base_year, 10, 1)
+        
+        # First rebalancing
+        rebalance_1 = st.checkbox(
+            t("rebalance_1"), 
+            value=True,
+            help="Enable the first annual rebalancing event"
+        )
+        rebalance_1_condition = st.checkbox(
+            t("deviation_condition") + " 1", 
+            value=False,
+            help="Only rebalance if allocation deviates beyond threshold"
+        )
+        rebalance_1_threshold = st.number_input(
+            t("deviation_threshold") + " 1",
+            min_value=0.0,
+            max_value=100.0,
+            value=12.0,
+            step=0.5,
+            help="Percentage deviation that triggers rebalancing"
+        )
+        
+        rebalance_1_start = st.date_input(
+            t("start_rebalance") + " 1",
+            value=rebalance_1_default.date(),
+            min_value=data.index.min().date(),
+            max_value=data.index.max().date(),
+            help="Date when first rebalancing starts (recurs annually)"
+        )
+        
+        # Second rebalancing
+        rebalance_2 = st.checkbox(
+            t("rebalance_2"), 
+            value=False,
+            help="Enable a second annual rebalancing event"
+        )
+        rebalance_2_condition = st.checkbox(
+            t("deviation_condition") + " 2", 
+            value=False,
+            help="Only rebalance if allocation deviates beyond threshold"
+        )
+        rebalance_2_threshold = st.number_input(
+            t("deviation_threshold") + " 2",
+            min_value=0.0,
+            max_value=100.0,
+            value=12.0,
+            step=0.5,
+            help="Percentage deviation that triggers rebalancing"
+        )
+        
+        rebalance_2_start = st.date_input(
+            t("start_rebalance") + " 2",
+            value=rebalance_2_default.date(),
+            min_value=data.index.min().date(),
+            max_value=data.index.max().date(),
+            help="Date when second rebalancing starts (recurs annually)"
+        )
     
     # Rebalancing settings dictionary
     rebalance_settings = {
@@ -1227,30 +1232,31 @@ with st.sidebar:
     # Storage costs
     st.subheader(t("storage_costs"))
     
-    storage_fee = st.number_input(
-        t("annual_storage_fee"), 
-        value=1.5,
-        help="Annual percentage fee for storing metals"
-    )
-    
-    storage_frequency = st.selectbox(
-        "Storage Fee Frequency",
-        ["Annual", "Quarterly", "Monthly"],
-        index=0,
-        help="How often storage fees are charged"
-    )
-    
-    vat = st.number_input(
-        t("vat"), 
-        value=19.0,
-        help="VAT percentage charged on storage fees"
-    )
-    
-    storage_metal = st.selectbox(
-        t("storage_metal"),
-        ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
-        help="Which metal(s) to sell to cover storage costs"
-    )
+    with st.expander(t("storage_costs"), expanded=False):
+        storage_fee = st.number_input(
+            t("annual_storage_fee"), 
+            value=1.5,
+            help="Annual percentage fee for storing metals"
+        )
+        
+        storage_frequency = st.selectbox(
+            "Storage Fee Frequency",
+            ["Annual", "Quarterly", "Monthly"],
+            index=0,
+            help="How often storage fees are charged"
+        )
+        
+        vat = st.number_input(
+            t("vat"), 
+            value=19.0,
+            help="VAT percentage charged on storage fees"
+        )
+        
+        storage_metal = st.selectbox(
+            t("storage_metal"),
+            ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
+            help="Which metal(s) to sell to cover storage costs"
+        )
     
     # Storage settings dictionary
     storage_settings = {
@@ -1962,3 +1968,24 @@ with st.expander("Help & Information"):
 
 st.caption("Disclaimer: This simulation is for educational purposes only. Past performance does not guarantee future results.")
 st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025")
+            if (rebalance_settings["rebalance_1"] and 
+                date >= pd.to_datetime(rebalance_settings["rebalance_1_start"]) and 
+                date.month == rebalance_settings["rebalance_1_start"].month and 
+                date.day == rebalance_settings["rebalance_1_start"].day):
+                
+                portfolio, rebalance_action = apply_rebalance(
+                    date, 
+                    portfolio,
+                    allocation,
+                    data.loc[date],
+                    "rebalance_1", 
+                    rebalance_settings["rebalance_1_condition"], 
+                    rebalance_settings["rebalance_1_threshold"],
+                    buyback_discounts,
+                    rebalance_markup,
+                    last_rebalance_dates
+                )
+                
+                actions.append(rebalance_action)
+            
+            # Check for
