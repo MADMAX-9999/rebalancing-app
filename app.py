@@ -1151,6 +1151,44 @@ with st.sidebar:
         step=50.0,
         help="Amount to invest in each recurring purchase"
     )
+
+    # Storage costs
+    st.subheader(t("storage_costs"))
+    
+    with st.expander(t("storage_costs"), expanded=False):
+        storage_fee = st.number_input(
+            t("annual_storage_fee"), 
+            value=1.5,
+            help="Annual percentage fee for storing metals"
+        )
+        
+        storage_frequency = st.selectbox(
+            "Storage Fee Frequency",
+            ["Annual", "Quarterly", "Monthly"],
+            index=0,
+            help="How often storage fees are charged"
+        )
+        
+        vat = st.number_input(
+            t("vat"), 
+            value=19.0,
+            help="VAT percentage charged on storage fees"
+        )
+        
+        storage_metal = st.selectbox(
+            t("storage_metal"),
+            ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
+            help="Which metal(s) to sell to cover storage costs"
+        )
+    
+    # Storage settings dictionary
+    storage_settings = {
+        "storage_fee": storage_fee,
+        "vat": vat,
+        "storage_metal": storage_metal
+    }
+
+    
     
     # Rebalancing settings
     st.subheader(t("rebalancing"))
@@ -1164,7 +1202,7 @@ with st.sidebar:
         # First rebalancing
         rebalance_1 = st.checkbox(
             t("rebalance_1"), 
-            value=True,
+            value=False,
             help="Enable the first annual rebalancing event"
         )
         rebalance_1_condition = st.checkbox(
@@ -1229,42 +1267,7 @@ with st.sidebar:
         "rebalance_2_start": rebalance_2_start
     }
     
-    # Storage costs
-    st.subheader(t("storage_costs"))
-    
-    with st.expander(t("storage_costs"), expanded=False):
-        storage_fee = st.number_input(
-            t("annual_storage_fee"), 
-            value=1.5,
-            help="Annual percentage fee for storing metals"
-        )
-        
-        storage_frequency = st.selectbox(
-            t("storage_frequency"),
-            [t("annual"), t("quarterly"), t("monthly")],
-            index=0,
-            help="How often storage fees are charged"
-        ) are charged"
-        )
-        
-        vat = st.number_input(
-            t("vat"), 
-            value=19.0,
-            help="VAT percentage charged on storage fees"
-        )
-        
-        storage_metal = st.selectbox(
-            t("storage_metal"),
-            ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
-            help="Which metal(s) to sell to cover storage costs"
-        )
-    
-    # Storage settings dictionary
-    storage_settings = {
-        "storage_fee": storage_fee,
-        "vat": vat,
-        "storage_metal": storage_metal
-    }
+
     
     # Margins and fees
     st.subheader(t("margins_fees"))
@@ -1969,24 +1972,24 @@ with st.expander("Help & Information"):
 
 st.caption("Disclaimer: This simulation is for educational purposes only. Past performance does not guarantee future results.")
 st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025")
-            if (rebalance_settings["rebalance_1"] and 
-                date >= pd.to_datetime(rebalance_settings["rebalance_1_start"]) and 
-                date.month == rebalance_settings["rebalance_1_start"].month and 
-                date.day == rebalance_settings["rebalance_1_start"].day):
+if (rebalance_settings["rebalance_1"] and 
+        date >= pd.to_datetime(rebalance_settings["rebalance_1_start"]) and 
+        date.month == rebalance_settings["rebalance_1_start"].month and 
+        date.day == rebalance_settings["rebalance_1_start"].day):
                 
-                portfolio, rebalance_action = apply_rebalance(
-                    date, 
-                    portfolio,
-                    allocation,
-                    data.loc[date],
-                    "rebalance_1", 
-                    rebalance_settings["rebalance_1_condition"], 
-                    rebalance_settings["rebalance_1_threshold"],
-                    buyback_discounts,
-                    rebalance_markup,
-                    last_rebalance_dates
-                )
+        portfolio, rebalance_action = apply_rebalance(
+            date, 
+            portfolio,
+            allocation,
+            data.loc[date],
+            "rebalance_1", 
+            rebalance_settings["rebalance_1_condition"], 
+            rebalance_settings["rebalance_1_threshold"],
+            buyback_discounts,
+            rebalance_markup,
+            last_rebalance_dates
+        )
                 
-                actions.append(rebalance_action)
+        actions.append(rebalance_action)
             
-            # Check for
+        # Check for
