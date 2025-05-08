@@ -1244,8 +1244,9 @@ with st.sidebar:
             [t("annual"), t("quarterly"), t("monthly")],
             index=0,
             help="How often storage fees are charged"
-        ) are charged"
         )
+
+       
         
         vat = st.number_input(
             t("vat"), 
