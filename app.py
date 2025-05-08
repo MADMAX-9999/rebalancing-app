@@ -1151,6 +1151,44 @@ with st.sidebar:
         step=50.0,
         help="Amount to invest in each recurring purchase"
     )
+
+    # Storage costs
+    st.subheader(t("storage_costs"))
+    
+    with st.expander(t("storage_costs"), expanded=False):
+        storage_fee = st.number_input(
+            t("annual_storage_fee"), 
+            value=1.5,
+            help="Annual percentage fee for storing metals"
+        )
+        
+        storage_frequency = st.selectbox(
+            "Storage Fee Frequency",
+            ["Annual", "Quarterly", "Monthly"],
+            index=0,
+            help="How often storage fees are charged"
+        )
+        
+        vat = st.number_input(
+            t("vat"), 
+            value=19.0,
+            help="VAT percentage charged on storage fees"
+        )
+        
+        storage_metal = st.selectbox(
+            t("storage_metal"),
+            ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
+            help="Which metal(s) to sell to cover storage costs"
+        )
+    
+    # Storage settings dictionary
+    storage_settings = {
+        "storage_fee": storage_fee,
+        "vat": vat,
+        "storage_metal": storage_metal
+    }
+
+    
     
     # Rebalancing settings
     st.subheader(t("rebalancing"))
@@ -1229,41 +1267,7 @@ with st.sidebar:
         "rebalance_2_start": rebalance_2_start
     }
     
-    # Storage costs
-    st.subheader(t("storage_costs"))
-    
-    with st.expander(t("storage_costs"), expanded=False):
-        storage_fee = st.number_input(
-            t("annual_storage_fee"), 
-            value=1.5,
-            help="Annual percentage fee for storing metals"
-        )
-        
-        storage_frequency = st.selectbox(
-            "Storage Fee Frequency",
-            ["Annual", "Quarterly", "Monthly"],
-            index=0,
-            help="How often storage fees are charged"
-        )
-        
-        vat = st.number_input(
-            t("vat"), 
-            value=19.0,
-            help="VAT percentage charged on storage fees"
-        )
-        
-        storage_metal = st.selectbox(
-            t("storage_metal"),
-            ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
-            help="Which metal(s) to sell to cover storage costs"
-        )
-    
-    # Storage settings dictionary
-    storage_settings = {
-        "storage_fee": storage_fee,
-        "vat": vat,
-        "storage_metal": storage_metal
-    }
+
     
     # Margins and fees
     st.subheader(t("margins_fees"))
