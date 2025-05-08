@@ -1,18 +1,4 @@
-# Add storage cost visualization if there are storage costs
-            if total_storage_cost > 0:
-                # Create a bar chart of storage costs by year
-                storage_by_year = storage_costs.groupby(storage_costs.index.year)["Storage Cost"].sum()
-                
-                fig = go.Figure(data=[
-                    go.Bar(
-                        x=storage_by_year.index,
-                        y=storage_by_year.values,
-                        marker_color='indianred'
-                    )
-                ])
-                
-                fig.update_layout(
-                    title# precious_metals_portfolio_simulator.py
+
 
 import streamlit as st
 import pandas as pd
