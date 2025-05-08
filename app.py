@@ -1164,7 +1164,7 @@ with st.sidebar:
         # First rebalancing
         rebalance_1 = st.checkbox(
             t("rebalance_1"), 
-            value=True,
+            value=False,
             help="Enable the first annual rebalancing event"
         )
         rebalance_1_condition = st.checkbox(
