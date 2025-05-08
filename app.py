@@ -1965,7 +1965,7 @@ with st.expander("Help & Information"):
     """)
 
 st.caption("Disclaimer: This simulation is for educational purposes only. Past performance does not guarantee future results.")
-st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025") first rebalancing
+st.caption(f"App Version: {APP_CONFIG['version']} | Last Updated: May 2025")
             if (rebalance_settings["rebalance_1"] and 
                 date >= pd.to_datetime(rebalance_settings["rebalance_1_start"]) and 
                 date.month == rebalance_settings["rebalance_1_start"].month and 
