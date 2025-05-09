@@ -141,9 +141,8 @@ def apply_preset(preset_key):
         if "storage_metal" in preset["storage_settings"]:
             st.session_state["storage_metal"] = preset["storage_settings"]["storage_metal"]
         if "storage_frequency" in preset["storage_settings"]:
-            frequency_map = {"Annual": 0, "Quarterly": 1, "Monthly": 2}
-            if preset["storage_settings"]["storage_frequency"] in frequency_map:
-                st.session_state["storage_frequency"] = frequency_map[preset["storage_settings"]["storage_frequency"]]
+        # Zapisujemy bezpośrednio wartość częstotliwości
+            st.session_state["storage_frequency"] = preset["storage_settings"]["storage_frequency"]
     
     return True
 
@@ -1337,7 +1336,7 @@ with st.sidebar:
         if "storage_metal" not in st.session_state:
             st.session_state["storage_metal"] = "Gold"
         if "storage_frequency" not in st.session_state:
-            st.session_state["storage_frequency"] = 0  # 0 = Annual
+            st.session_state["storage_frequency"] = "Annual"
         
         storage_fee = st.number_input(
             t("annual_storage_fee"), 
@@ -1346,20 +1345,22 @@ with st.sidebar:
             help="How often storage fees are charged"
         )
     
-    # Używamy liczbowego indeksu zamiast przetłumaczonych wartości
-        frequency_options = [t("annual"), t("quarterly"), t("monthly")]
+    # Prostsze podejście - używamy tych samych wartości, co w oryginalnym kodzie
+        frequency_options = ["Annual", "Quarterly", "Monthly"]
+        frequency_labels = {
+            "Annual": t("annual"),
+            "Quarterly": t("quarterly"),
+            "Monthly": t("monthly")
+        }
+    
         storage_frequency = st.selectbox(
             t("storage_frequency"),
-            options=range(len(frequency_options)),
-            format_func=lambda i: frequency_options[i],
-            index=st.session_state["storage_frequency"],
+            options=frequency_options,
+            format_func=lambda x: frequency_labels.get(x, x),
+            index=frequency_options.index(st.session_state["storage_frequency"]),
             key="storage_frequency",
             help="How often storage fees are charged"
         )
-    
-    # Mapujemy indeks na wartość dla kodu symulacji
-        frequency_mapping = ["Annual", "Quarterly", "Monthly"]
-        selected_frequency = frequency_mapping[storage_frequency]
     
         vat = st.number_input(
             t("vat"), 
@@ -1368,21 +1369,27 @@ with st.sidebar:
             help="VAT percentage charged on storage fees"
         )
     
-    # Dla storage_metal musimy być ostrożni, bo może zawierać przetłumaczoną wartość
-        metal_options = ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"]
+    # Podobne podejście dla storage_metal
+        metal_options = ["Gold", "Silver", "Platinum", "Palladium", "Best of Year", "ALL"]
+        metal_labels = {
+            "Gold": t("gold"),
+            "Silver": t("silver"),
+            "Platinum": t("platinum"),
+            "Palladium": t("palladium"),
+            "Best of Year": t("best_of_year"),
+            "ALL": t("all_metals")
+        }
     
-    # Znajdujemy bieżący indeks dla storage_metal
-        current_metal_index = 0
-        for i, option in enumerate(metal_options):
-            if option == st.session_state["storage_metal"]:
-                current_metal_index = i
-                break
+    # Sprawdzamy, czy wartość jest w dostępnych opcjach
+        current_metal = st.session_state["storage_metal"]
+        if current_metal not in metal_options:
+            current_metal = "Gold"  # Domyślna wartość, jeśli bieżąca nie istnieje
     
         storage_metal = st.selectbox(
             t("storage_metal"),
-            options=range(len(metal_options)),
-            format_func=lambda i: metal_options[i],
-            index=current_metal_index,
+            options=metal_options,
+            format_func=lambda x: metal_labels.get(x, x),
+            index=metal_options.index(current_metal),
             key="storage_metal",
             help="Which metal(s) to sell to cover storage costs"
         )
