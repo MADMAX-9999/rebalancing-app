@@ -284,14 +284,17 @@ def generate_sample_inflation_data():
 def load_presets(presets_dir="presets"):
     """Load preset JSON files from a directory"""
     presets = {}
-    try:
-        for file in os.listdir(presets_dir):
-            if file.endswith(".json"):
+    if not os.path.exists(presets_dir):
+        return presets  # Folder nie istnieje
+    
+    for file in os.listdir(presets_dir):
+        if file.endswith(".json"):
+            try:
                 with open(os.path.join(presets_dir, file), "r", encoding="utf-8") as f:
                     presets[file.replace(".json", "")] = json.load(f)
-    except Exception as e:
-        st.warning(f"Error loading presets: {e}")
-        return presets
+            except Exception as e:
+                st.warning(f"Error loading {file}: {e}")
+    return presets
 
 
 
