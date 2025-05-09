@@ -1027,20 +1027,20 @@ st.markdown("---")
 with st.sidebar:
     st.header(t("simulation_settings"))
 
-with st.expander("Presets", expanded=False):
-    presets = load_presets()
-    if presets:
-        preset_names = list(presets.keys())
-        selected_preset = st.selectbox("Select a preset", preset_names)
-        if st.button("Load Preset"):
-            preset = presets[selected_preset]
-            # Przypisz wartości do sesji i zrób rerun
-            for key, value in preset.items():
-                st.session_state[key] = value
-            st.success(f"Preset '{selected_preset}' loaded.")
-            st.rerun()
-    else:
-        st.info("No presets found in /presets directory.")
+    with st.expander("Presets", expanded=False):
+        presets = load_presets()
+        if presets:
+            preset_names = list(presets.keys())
+            selected_preset = st.selectbox("Select a preset", preset_names)
+            if st.button("Load Preset"):
+                preset = presets[selected_preset]
+                # Przypisz wartości do sesji i zrób rerun
+                for key, value in preset.items():
+                    st.session_state[key] = value
+                st.success(f"Preset '{selected_preset}' loaded.")
+                st.rerun()
+        else:
+            st.info("No presets found in /presets directory.")
     
     # Investment amounts and dates
     st.subheader(t("investment_amounts"))
