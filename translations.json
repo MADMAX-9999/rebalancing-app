@@ -138,7 +138,11 @@
     "start_price": "Cena Początkowa (EUR)",
     "end_price": "Cena Końcowa (EUR)",
     "volatility": "Zmienność (%)",
-    "storage_costs_by_year": "Koszty Magazynowania wg Roku"
+    "storage_costs_by_year": "Koszty Magazynowania wg Roku",
+    "presets": "Gotowe Strategie",
+    "select_preset": "Wybierz strategię",
+    "apply_preset": "Zastosuj strategię",
+    "preset_applied": "✅ Strategia została zastosowana"
   },
   "Deutsch": {
     "app_title": "Edelmetallportfolio ReBalancing Simulator",
@@ -279,7 +283,11 @@
     "start_price": "Anfangspreis (EUR)",
     "end_price": "Endpreis (EUR)",
     "volatility": "Volatilität (%)",
-    "storage_costs_by_year": "Lagerkosten nach Jahr"
+    "storage_costs_by_year": "Lagerkosten nach Jahr",
+    "presets": "Vordefinierte Strategien",
+    "select_preset": "Strategie auswählen",
+    "apply_preset": "Strategie anwenden",
+    "preset_applied": "✅ Strategie wurde angewendet"
   },
   "English": {
     "app_title": "Precious Metals Portfolio Rebalancing Simulator",
@@ -420,6 +428,15 @@
     "start_price": "Start Price (EUR)",
     "end_price": "End Price (EUR)",
     "volatility": "Volatility (%)",
-    "storage_costs_by_year": "Storage Costs by Year"
+    "storage_costs_by_year": "Storage Costs by Year",
+    "presets": "Preset Strategies",
+    "select_preset": "Select strategy",
+    "apply_preset": "Apply strategy",
+    "preset_applied": "✅ Strategy has been applied"
   }
 }
+
+
+
+
+
