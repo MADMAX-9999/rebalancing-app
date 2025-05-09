@@ -1343,16 +1343,23 @@ with st.sidebar:
             t("annual_storage_fee"), 
             value=st.session_state["storage_fee"],
             key="storage_fee",
-            help=t("storage_frequency_help")
+            help="How often storage fees are charged"
         )
     
+    # Używamy liczbowego indeksu zamiast przetłumaczonych wartości
+        frequency_options = [t("annual"), t("quarterly"), t("monthly")]
         storage_frequency = st.selectbox(
             t("storage_frequency"),
-            [t("annual"), t("quarterly"), t("monthly")],
+            options=range(len(frequency_options)),
+            format_func=lambda i: frequency_options[i],
             index=st.session_state["storage_frequency"],
             key="storage_frequency",
-            help=t("storage_frequency_help")
+            help="How often storage fees are charged"
         )
+    
+    # Mapujemy indeks na wartość dla kodu symulacji
+        frequency_mapping = ["Annual", "Quarterly", "Monthly"]
+        selected_frequency = frequency_mapping[storage_frequency]
     
         vat = st.number_input(
             t("vat"), 
@@ -1361,19 +1368,33 @@ with st.sidebar:
             help="VAT percentage charged on storage fees"
         )
     
+    # Dla storage_metal musimy być ostrożni, bo może zawierać przetłumaczoną wartość
+        metal_options = ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"]
+    
+    # Znajdujemy bieżący indeks dla storage_metal
+        current_metal_index = 0
+        for i, option in enumerate(metal_options):
+            if option == st.session_state["storage_metal"]:
+                current_metal_index = i
+                break
+    
         storage_metal = st.selectbox(
             t("storage_metal"),
-            ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
-            index=["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"].index(st.session_state["storage_metal"]) if st.session_state["storage_metal"] in ["Gold", "Silver", "Platinum", "Palladium", "ALL"] else 0,
+            options=range(len(metal_options)),
+            format_func=lambda i: metal_options[i],
+            index=current_metal_index,
             key="storage_metal",
             help="Which metal(s) to sell to cover storage costs"
         )
+    
+    # Mapujemy indeks na wartość dla kodu symulacji
+        selected_metal = metal_options[storage_metal]
     
     # Storage settings dictionary
     storage_settings = {
         "storage_fee": storage_fee,
         "vat": vat,
-        "storage_metal": storage_metal
+        "storage_metal": selected_metal
     }
 
     
