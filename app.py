@@ -1152,6 +1152,37 @@ st.markdown("---")
 
 # Sidebar settings
 with st.sidebar:
+    # Sekcja presetów
+    st.header("🔍 " + t("presets"))
+    
+    # Tworzymy listę nazw presetów dla aktualnego języka
+    preset_options = [(key, PRESETS[key]["name"][language]) for key in PRESETS.keys()]
+    
+    # Wybór presetu
+    selected_preset = st.selectbox(
+        t("select_preset"),
+        options=[key for key, _ in preset_options],
+        format_func=lambda key: next((name for k, name in preset_options if k == key), key),
+        index=list(PRESETS.keys()).index("custom")  # Domyślnie "custom"
+    )
+    
+    # Wyświetlanie opisu presetu
+    st.info(PRESETS[selected_preset]["description"][language])
+    
+    # Przycisk do zastosowania presetu
+    if selected_preset != "custom":
+        if st.button(t("apply_preset")):
+            success = apply_preset(selected_preset)
+            if success:
+                st.success(t("preset_applied"))
+                # Wymuszamy odświeżenie strony, aby zastosować nowe ustawienia
+                st.rerun()
+    
+    st.markdown("---")
+
+
+
+    
     st.header(t("simulation_settings"))
     
     # Investment amounts and dates
