@@ -11,147 +11,6 @@ import base64
 from datetime import datetime, timedelta
 from pathlib import Path
 
-
-# Definicja presetów
-PRESETS = {
-    "SSW": {
-        "name": {
-            "Polski": "SSW",
-            "Deutsch": "SSW",
-            "English": "SSW"
-        },
-        "description": {
-            "Polski": "Standardowe ustawienia symulatora",
-            "Deutsch": "Standardeinstellungen des Simulators",
-            "English": "Standard simulator settings"
-        },
-        # Nie zmieniamy ustawień domyślnych - zachowując obecne wartości
-        "allocation": {
-            "Gold": 40,
-            "Silver": 20,
-            "Platinum": 20,
-            "Palladium": 20
-        },
-        "margins": {
-            "Gold": 15.6,
-            "Silver": 18.36,
-            "Platinum": 24.24,
-            "Palladium": 22.49
-        },
-        "buyback_discounts": {
-            "Gold": -1.5,
-            "Silver": -3.0,
-            "Platinum": -3.0,
-            "Palladium": -3.0
-        },
-        "storage_settings": {
-            "storage_fee": 1.5,
-            "vat": 19.0,
-            "storage_metal": "Gold",
-            "storage_frequency": "Annual"
-        }
-    },
-    "Auvesta": {
-        "name": {
-            "Polski": "Auvesta",
-            "Deutsch": "Auvesta",
-            "English": "Auvesta"
-        },
-        "description": {
-            "Polski": "Ustawienia bazujące na ofercie Auvesta",
-            "Deutsch": "Einstellungen basierend auf dem Auvesta-Angebot",
-            "English": "Settings based on Auvesta offer"
-        },
-        "allocation": {
-            "Gold": 40,
-            "Silver": 30,
-            "Platinum": 15,
-            "Palladium": 15
-        },
-        "margins": {
-            "Gold": 11.0,
-            "Silver": 16.0,
-            "Platinum": 17.0,
-            "Palladium": 21.0
-        },
-        "buyback_discounts": {
-            "Gold": 0.0,
-            "Silver": 0.0,
-            "Platinum": 0.0,
-            "Palladium": 0.0
-        },
-        "storage_settings": {
-            "storage_fee": 0.96,
-            "vat": 19.0,
-            "storage_metal": "ALL",
-            "storage_frequency": "Monthly"
-        }
-    },
-    "custom": {
-        "name": {
-            "Polski": "Własne ustawienia",
-            "Deutsch": "Benutzerdefinierte Einstellungen",
-            "English": "Custom settings"
-        },
-        "description": {
-            "Polski": "Twoje własne ustawienia",
-            "Deutsch": "Ihre eigenen Einstellungen",
-            "English": "Your own custom settings"
-        },
-        "allocation": None,
-        "margins": None,
-        "buyback_discounts": None,
-        "storage_settings": None
-    }
-}
-
-# Funkcja do zastosowania presetu
-def apply_preset(preset_key):
-    """Apply selected preset to session state"""
-    if preset_key not in PRESETS or preset_key == "custom":
-        return False
-    
-    preset = PRESETS[preset_key]
-    
-    # Apply allocation
-    if preset["allocation"]:
-        for metal, value in preset["allocation"].items():
-            st.session_state[f"alloc_{metal}"] = value
-    
-    # Apply margins
-    if preset["margins"]:
-        for metal, value in preset["margins"].items():
-            key = f"margin_{metal.lower()}"
-            if key in st.session_state:
-                st.session_state[key] = value
-    
-    # Apply buyback discounts
-    if preset["buyback_discounts"]:
-        for metal, value in preset["buyback_discounts"].items():
-            key = f"buyback_{metal.lower()}"
-            if key in st.session_state:
-                st.session_state[key] = value
-    
-    # Apply storage settings
-    if preset["storage_settings"]:
-        if "storage_fee" in preset["storage_settings"]:
-            st.session_state["storage_fee"] = preset["storage_settings"]["storage_fee"]
-        if "vat" in preset["storage_settings"]:
-            st.session_state["vat"] = preset["storage_settings"]["vat"]
-        if "storage_metal" in preset["storage_settings"]:
-            st.session_state["storage_metal"] = preset["storage_settings"]["storage_metal"]
-        if "storage_frequency" in preset["storage_settings"]:
-        # Zapisujemy bezpośrednio wartość częstotliwości
-            st.session_state["storage_frequency"] = preset["storage_settings"]["storage_frequency"]
-    
-    return True
-
-
-
-
-
-
-
 # =========================================
 # CONFIG AND INITIALIZATION
 # =========================================
@@ -1151,37 +1010,6 @@ st.markdown("---")
 
 # Sidebar settings
 with st.sidebar:
-    # Sekcja presetów
-    st.header("🔍 " + t("presets"))
-    
-    # Tworzymy listę nazw presetów dla aktualnego języka
-    preset_options = [(key, PRESETS[key]["name"][language]) for key in PRESETS.keys()]
-    
-    # Wybór presetu
-    selected_preset = st.selectbox(
-        t("select_preset"),
-        options=[key for key, _ in preset_options],
-        format_func=lambda key: next((name for k, name in preset_options if k == key), key),
-        index=list(PRESETS.keys()).index("custom")  # Domyślnie "custom"
-    )
-    
-    # Wyświetlanie opisu presetu
-    st.info(PRESETS[selected_preset]["description"][language])
-    
-    # Przycisk do zastosowania presetu
-    if selected_preset != "custom":
-        if st.button(t("apply_preset")):
-            success = apply_preset(selected_preset)
-            if success:
-                st.success(t("preset_applied"))
-                # Wymuszamy odświeżenie strony, aby zastosować nowe ustawienia
-                st.rerun()
-    
-    st.markdown("---")
-
-
-
-    
     st.header(t("simulation_settings"))
     
     # Investment amounts and dates
@@ -1328,80 +1156,36 @@ with st.sidebar:
     st.subheader(t("storage_costs"))
     
     with st.expander(t("storage_costs"), expanded=False):
-    # Inicjalizacja session_state dla kosztów magazynowania
-        if "storage_fee" not in st.session_state:
-            st.session_state["storage_fee"] = 1.5
-        if "vat" not in st.session_state:
-            st.session_state["vat"] = 19.0
-        if "storage_metal" not in st.session_state:
-            st.session_state["storage_metal"] = "Gold"
-        if "storage_frequency" not in st.session_state:
-            st.session_state["storage_frequency"] = "Annual"
-        
         storage_fee = st.number_input(
             t("annual_storage_fee"), 
-            value=st.session_state["storage_fee"],
-            key="storage_fee",
-            help="How often storage fees are charged"
+            value=1.5,
+            help="Annual percentage fee for storing metals"
         )
-    
-    # Prostsze podejście - używamy tych samych wartości, co w oryginalnym kodzie
-        frequency_options = ["Annual", "Quarterly", "Monthly"]
-        frequency_labels = {
-            "Annual": t("annual"),
-            "Quarterly": t("quarterly"),
-            "Monthly": t("monthly")
-        }
-    
+        
         storage_frequency = st.selectbox(
-            t("storage_frequency"),
-            options=frequency_options,
-            format_func=lambda x: frequency_labels.get(x, x),
-            index=frequency_options.index(st.session_state["storage_frequency"]),
-            key="storage_frequency",
+            "Storage Fee Frequency",
+            ["Annual", "Quarterly", "Monthly"],
+            index=0,
             help="How often storage fees are charged"
         )
-    
+        
         vat = st.number_input(
             t("vat"), 
-            value=st.session_state["vat"],
-            key="vat",
+            value=19.0,
             help="VAT percentage charged on storage fees"
         )
-    
-    # Podobne podejście dla storage_metal
-        metal_options = ["Gold", "Silver", "Platinum", "Palladium", "Best of Year", "ALL"]
-        metal_labels = {
-            "Gold": t("gold"),
-            "Silver": t("silver"),
-            "Platinum": t("platinum"),
-            "Palladium": t("palladium"),
-            "Best of Year": t("best_of_year"),
-            "ALL": t("all_metals")
-        }
-    
-    # Sprawdzamy, czy wartość jest w dostępnych opcjach
-        current_metal = st.session_state["storage_metal"]
-        if current_metal not in metal_options:
-            current_metal = "Gold"  # Domyślna wartość, jeśli bieżąca nie istnieje
-    
+        
         storage_metal = st.selectbox(
             t("storage_metal"),
-            options=metal_options,
-            format_func=lambda x: metal_labels.get(x, x),
-            index=metal_options.index(current_metal),
-            key="storage_metal",
+            ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
             help="Which metal(s) to sell to cover storage costs"
         )
-    
-    # Mapujemy indeks na wartość dla kodu symulacji
-        selected_metal = metal_options[storage_metal]
     
     # Storage settings dictionary
     storage_settings = {
         "storage_fee": storage_fee,
         "vat": vat,
-        "storage_metal": selected_metal
+        "storage_metal": storage_metal
     }
 
     
@@ -1489,42 +1273,58 @@ with st.sidebar:
     st.subheader(t("margins_fees"))
     
     with st.expander(t("margins_fees"), expanded=False):
-    # Inicjalizacja session_state dla marż
-        if "margin_gold" not in st.session_state:
-            st.session_state["margin_gold"] = 15.6
-        if "margin_silver" not in st.session_state:
-            st.session_state["margin_silver"] = 18.36
-        if "margin_platinum" not in st.session_state:
-            st.session_state["margin_platinum"] = 24.24
-        if "margin_palladium" not in st.session_state:
-            st.session_state["margin_palladium"] = 22.49
-        
         margins = {
-            "Gold": st.number_input(t("gold_margin"), value=st.session_state["margin_gold"], key="margin_gold"),
-            "Silver": st.number_input(t("silver_margin"), value=st.session_state["margin_silver"], key="margin_silver"),
-            "Platinum": st.number_input(t("platinum_margin"), value=st.session_state["margin_platinum"], key="margin_platinum"),
-            "Palladium": st.number_input(t("palladium_margin"), value=st.session_state["margin_palladium"], key="margin_palladium")
+            "Gold": st.number_input(
+                t("gold_margin"), 
+                value=15.6,
+                help="Percentage markup when buying gold"
+            ),
+            "Silver": st.number_input(
+                t("silver_margin"), 
+                value=18.36,
+                help="Percentage markup when buying silver"
+            ),
+            "Platinum": st.number_input(
+                t("platinum_margin"), 
+                value=24.24,
+                help="Percentage markup when buying platinum"
+            ),
+            "Palladium": st.number_input(
+                t("palladium_margin"), 
+                value=22.49,
+                help="Percentage markup when buying palladium"
+            )
         }
     
     # Buyback prices
     st.subheader(t("buyback_prices"))
     
     with st.expander(t("buyback_prices"), expanded=False):
-    # Inicjalizacja session_state dla odkupu
-        if "buyback_gold" not in st.session_state:
-            st.session_state["buyback_gold"] = -1.5
-        if "buyback_silver" not in st.session_state:
-            st.session_state["buyback_silver"] = -3.0
-        if "buyback_platinum" not in st.session_state:
-            st.session_state["buyback_platinum"] = -3.0
-        if "buyback_palladium" not in st.session_state:
-            st.session_state["buyback_palladium"] = -3.0
-    
         buyback_discounts = {
-            "Gold": st.number_input(t("gold_buyback"), value=st.session_state["buyback_gold"], step=0.1, key="buyback_gold"),
-            "Silver": st.number_input(t("silver_buyback"), value=st.session_state["buyback_silver"], step=0.1, key="buyback_silver"),
-            "Platinum": st.number_input(t("platinum_buyback"), value=st.session_state["buyback_platinum"], step=0.1, key="buyback_platinum"),
-            "Palladium": st.number_input(t("palladium_buyback"), value=st.session_state["buyback_palladium"], step=0.1, key="buyback_palladium")
+            "Gold": st.number_input(
+                t("gold_buyback"), 
+                value=-1.5, 
+                step=0.1,
+                help="Percentage difference from spot price when selling gold"
+            ),
+            "Silver": st.number_input(
+                t("silver_buyback"), 
+                value=-3.0, 
+                step=0.1,
+                help="Percentage difference from spot price when selling silver"
+            ),
+            "Platinum": st.number_input(
+                t("platinum_buyback"), 
+                value=-3.0, 
+                step=0.1,
+                help="Percentage difference from spot price when selling platinum"
+            ),
+            "Palladium": st.number_input(
+                t("palladium_buyback"), 
+                value=-3.0, 
+                step=0.1,
+                help="Percentage difference from spot price when selling palladium"
+            )
         }
     
     # Rebalancing prices
