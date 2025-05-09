@@ -1467,31 +1467,21 @@ with st.sidebar:
     st.subheader(t("buyback_prices"))
     
     with st.expander(t("buyback_prices"), expanded=False):
+    # Inicjalizacja session_state dla odkupu
+        if "buyback_gold" not in st.session_state:
+            st.session_state["buyback_gold"] = -1.5
+        if "buyback_silver" not in st.session_state:
+            st.session_state["buyback_silver"] = -3.0
+        if "buyback_platinum" not in st.session_state:
+            st.session_state["buyback_platinum"] = -3.0
+        if "buyback_palladium" not in st.session_state:
+            st.session_state["buyback_palladium"] = -3.0
+    
         buyback_discounts = {
-            "Gold": st.number_input(
-                t("gold_buyback"), 
-                value=-1.5, 
-                step=0.1,
-                help="Percentage difference from spot price when selling gold"
-            ),
-            "Silver": st.number_input(
-                t("silver_buyback"), 
-                value=-3.0, 
-                step=0.1,
-                help="Percentage difference from spot price when selling silver"
-            ),
-            "Platinum": st.number_input(
-                t("platinum_buyback"), 
-                value=-3.0, 
-                step=0.1,
-                help="Percentage difference from spot price when selling platinum"
-            ),
-            "Palladium": st.number_input(
-                t("palladium_buyback"), 
-                value=-3.0, 
-                step=0.1,
-                help="Percentage difference from spot price when selling palladium"
-            )
+            "Gold": st.number_input(t("gold_buyback"), value=st.session_state["buyback_gold"], step=0.1, key="buyback_gold"),
+            "Silver": st.number_input(t("silver_buyback"), value=st.session_state["buyback_silver"], step=0.1, key="buyback_silver"),
+            "Platinum": st.number_input(t("platinum_buyback"), value=st.session_state["buyback_platinum"], step=0.1, key="buyback_platinum"),
+            "Palladium": st.number_input(t("palladium_buyback"), value=st.session_state["buyback_palladium"], step=0.1, key="buyback_palladium")
         }
     
     # Rebalancing prices
