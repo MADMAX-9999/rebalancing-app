@@ -20,6 +20,5 @@
         "rebalance_2": false,
         "rebalance_2_condition": false,
         "rebalance_2_threshold": 12.0,
-     
     }
 }
