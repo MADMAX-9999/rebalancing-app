@@ -11,6 +11,148 @@ import base64
 from datetime import datetime, timedelta
 from pathlib import Path
 
+
+# Definicja presetów
+PRESETS = {
+    "SSW": {
+        "name": {
+            "Polski": "SSW",
+            "Deutsch": "SSW",
+            "English": "SSW"
+        },
+        "description": {
+            "Polski": "Standardowe ustawienia symulatora",
+            "Deutsch": "Standardeinstellungen des Simulators",
+            "English": "Standard simulator settings"
+        },
+        # Nie zmieniamy ustawień domyślnych - zachowując obecne wartości
+        "allocation": {
+            "Gold": 40,
+            "Silver": 20,
+            "Platinum": 20,
+            "Palladium": 20
+        },
+        "margins": {
+            "Gold": 15.6,
+            "Silver": 18.36,
+            "Platinum": 24.24,
+            "Palladium": 22.49
+        },
+        "buyback_discounts": {
+            "Gold": -1.5,
+            "Silver": -3.0,
+            "Platinum": -3.0,
+            "Palladium": -3.0
+        },
+        "storage_settings": {
+            "storage_fee": 1.5,
+            "vat": 19.0,
+            "storage_metal": "Gold",
+            "storage_frequency": "Annual"
+        }
+    },
+    "Auvesta": {
+        "name": {
+            "Polski": "Auvesta",
+            "Deutsch": "Auvesta",
+            "English": "Auvesta"
+        },
+        "description": {
+            "Polski": "Ustawienia bazujące na ofercie Auvesta",
+            "Deutsch": "Einstellungen basierend auf dem Auvesta-Angebot",
+            "English": "Settings based on Auvesta offer"
+        },
+        "allocation": {
+            "Gold": 40,
+            "Silver": 30,
+            "Platinum": 15,
+            "Palladium": 15
+        },
+        "margins": {
+            "Gold": 11.0,
+            "Silver": 16.0,
+            "Platinum": 17.0,
+            "Palladium": 21.0
+        },
+        "buyback_discounts": {
+            "Gold": 0.0,
+            "Silver": 0.0,
+            "Platinum": 0.0,
+            "Palladium": 0.0
+        },
+        "storage_settings": {
+            "storage_fee": 0.96,
+            "vat": 19.0,
+            "storage_metal": "ALL",
+            "storage_frequency": "Monthly"
+        }
+    },
+    "custom": {
+        "name": {
+            "Polski": "Własne ustawienia",
+            "Deutsch": "Benutzerdefinierte Einstellungen",
+            "English": "Custom settings"
+        },
+        "description": {
+            "Polski": "Twoje własne ustawienia",
+            "Deutsch": "Ihre eigenen Einstellungen",
+            "English": "Your own custom settings"
+        },
+        "allocation": None,
+        "margins": None,
+        "buyback_discounts": None,
+        "storage_settings": None
+    }
+}
+
+# Funkcja do zastosowania presetu
+def apply_preset(preset_key):
+    """Apply selected preset to session state"""
+    if preset_key not in PRESETS or preset_key == "custom":
+        return False
+    
+    preset = PRESETS[preset_key]
+    
+    # Apply allocation
+    if preset["allocation"]:
+        for metal, value in preset["allocation"].items():
+            st.session_state[f"alloc_{metal}"] = value
+    
+    # Apply margins
+    if preset["margins"]:
+        for metal, value in preset["margins"].items():
+            key = f"margin_{metal.lower()}"
+            if key in st.session_state:
+                st.session_state[key] = value
+    
+    # Apply buyback discounts
+    if preset["buyback_discounts"]:
+        for metal, value in preset["buyback_discounts"].items():
+            key = f"buyback_{metal.lower()}"
+            if key in st.session_state:
+                st.session_state[key] = value
+    
+    # Apply storage settings
+    if preset["storage_settings"]:
+        if "storage_fee" in preset["storage_settings"]:
+            st.session_state["storage_fee"] = preset["storage_settings"]["storage_fee"]
+        if "vat" in preset["storage_settings"]:
+            st.session_state["vat"] = preset["storage_settings"]["vat"]
+        if "storage_metal" in preset["storage_settings"]:
+            st.session_state["storage_metal"] = preset["storage_settings"]["storage_metal"]
+        if "storage_frequency" in preset["storage_settings"]:
+            frequency_map = {"Annual": 0, "Quarterly": 1, "Monthly": 2}
+            if preset["storage_settings"]["storage_frequency"] in frequency_map:
+                st.session_state["storage_frequency"] = frequency_map[preset["storage_settings"]["storage_frequency"]]
+    
+    return True
+
+
+
+
+
+
+
 # =========================================
 # CONFIG AND INITIALIZATION
 # =========================================
