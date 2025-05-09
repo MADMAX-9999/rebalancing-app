@@ -208,67 +208,63 @@ def load_data():
 
 @st.cache_data
 def load_inflation_data():
-    """Load and preprocess inflation data for both PLN and EUR"""
+    """Load and preprocess inflation data with improved error handling"""
     try:
-        # Najpierw spróbuj wczytać nowy format pliku (z kolumnami Year, PLN_Inflation, EUR_Inflation)
-        try:
-            df = pd.read_csv("inflation_rates.csv")
-            
-            # Sprawdź, czy plik ma wymagane kolumny
-            required_columns = ["Year", "PLN_Inflation", "EUR_Inflation"]
-            if all(col in df.columns for col in required_columns):
-                # Przekształć dane, jeśli są w formacie np. 110.1 zamiast 10.1
-                if df["PLN_Inflation"].mean() > 50:
-                    df["PLN_Inflation"] = df["PLN_Inflation"] - 100
-                if df["EUR_Inflation"].mean() > 50:
-                    df["EUR_Inflation"] = df["EUR_Inflation"] - 100
-                    
-                # Dodatkowo utworzymy kolumnę kompatybilną ze starym formatem
-                df["Rok"] = df["Year"]
-                df["Inflacja (%)"] = df["PLN_Inflation"]  # Używamy inflacji PLN jako domyślnej
-                
-                st.success("Successfully loaded inflation data from inflation_rates.csv")
-                return df
-        except Exception as e:
-            st.warning(f"Could not load inflation_rates.csv: {e}, trying inflacja.csv as fallback")
+        # First try to load from the data directory
+        data_paths = ["inflacja.csv", "data/inflacja.csv", "../data/inflacja.csv"]
         
-        # Jeśli nie udało się wczytać nowego formatu, spróbuj wczytać stary format
-        df = pd.read_csv("inflacja.csv", sep=";", encoding="cp1250")
-        df = df[["Rok", "Wartość"]].copy()
-        df["Wartość"] = df["Wartość"].str.replace(",", ".").astype(float)
-        df["Inflacja (%)"] = df["Wartość"] - 100
+        for path in data_paths:
+            try:
+                df = pd.read_csv(path, sep=";", encoding="cp1250")
+                df = df[["Rok", "Wartość"]].copy()
+                df["Wartość"] = df["Wartość"].str.replace(",", ".").astype(float)
+                df["Inflacja (%)"] = df["Wartość"] - 100
+                return df[["Rok", "Inflacja (%)"]]
+            except (FileNotFoundError, pd.errors.EmptyDataError):
+                continue
         
-        # Dodaj kolumny kompatybilne z nowym formatem
-        df["Year"] = df["Rok"]
-        df["PLN_Inflation"] = df["Inflacja (%)"]
-        df["EUR_Inflation"] = df["Inflacja (%)"] * 0.5  # Przykładowa wartość, można dostosować
+        # If all paths fail, generate sample data
+        st.warning("Inflation data file not found. Using generated sample data.")
+        return generate_sample_inflation_data()
         
-        st.success("Successfully loaded inflation data from inflacja.csv")
-        return df
     except Exception as e:
         st.error(f"Error loading inflation data: {e}")
-        # Return sample data if both files not found
+        # Return sample data if file not found
         return generate_sample_inflation_data()
 
-def generate_sample_inflation_data():
-    """Generate sample inflation data"""
-    years = range(2000, 2026)
+def generate_sample_data():
+    """Generate sample data for testing purposes"""
+    index = pd.date_range(start='2000-01-01', end='2025-01-01', freq='B')
+    data = pd.DataFrame(index=index)
     
-    # Generujemy dane dla PLN (wyższe) i EUR (niższe)
-    np.random.seed(42)  # Dla powtarzalności
-    pln_inflation = np.random.normal(3.5, 2.0, len(years))  # Średnia 3.5%, odchylenie 2%
-    eur_inflation = np.random.normal(1.8, 1.0, len(years))  # Średnia 1.8%, odchylenie 1%
+    # Generate sample price data with realistic trends
+    np.random.seed(42)
     
-    df = pd.DataFrame({
-        "Year": years,
-        "Rok": years,
-        "PLN_Inflation": pln_inflation,
-        "EUR_Inflation": eur_inflation,
-        "Inflacja (%)": pln_inflation  # Kompatybilność ze starym formatem
-    })
+    # Base values
+    base_values = {
+        'Gold': 400,
+        'Silver': 5,
+        'Platinum': 350, 
+        'Palladium': 200
+    }
     
-    st.warning("Using generated sample inflation data")
-    return df
+    # Trends and volatility
+    for metal, base in base_values.items():
+        # Create a growing trend with volatility
+        trend = np.linspace(0, 4, len(index))  # Base trend multiplier from 1x to 5x
+        noise = np.random.normal(0, 0.2, len(index))  # Daily noise
+        seasonal = 0.2 * np.sin(np.linspace(0, 20*np.pi, len(index)))  # Seasonal pattern
+        
+        # Combine trend, noise and seasonality
+        series = base * (1 + trend + noise + seasonal)
+        
+        # EUR price
+        data[f'{metal}_EUR'] = series
+        
+        # USD price (slightly different)
+        data[f'{metal}_USD'] = series * (1 + np.random.normal(0, 0.05, len(index)))
+    
+    return data
 
 def generate_sample_inflation_data():
     """Generate sample inflation data"""
