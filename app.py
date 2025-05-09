@@ -1329,28 +1329,43 @@ with st.sidebar:
     st.subheader(t("storage_costs"))
     
     with st.expander(t("storage_costs"), expanded=False):
+    # Inicjalizacja session_state dla kosztów magazynowania
+        if "storage_fee" not in st.session_state:
+            st.session_state["storage_fee"] = 1.5
+        if "vat" not in st.session_state:
+            st.session_state["vat"] = 19.0
+        if "storage_metal" not in st.session_state:
+            st.session_state["storage_metal"] = "Gold"
+        if "storage_frequency" not in st.session_state:
+            st.session_state["storage_frequency"] = 0  # 0 = Annual
+        
         storage_fee = st.number_input(
             t("annual_storage_fee"), 
-            value=1.5,
-            help="Annual percentage fee for storing metals"
+            value=st.session_state["storage_fee"],
+            key="storage_fee",
+            help=t("storage_frequency_help")
         )
-        
+    
         storage_frequency = st.selectbox(
-            "Storage Fee Frequency",
-            ["Annual", "Quarterly", "Monthly"],
-            index=0,
-            help="How often storage fees are charged"
+            t("storage_frequency"),
+            [t("annual"), t("quarterly"), t("monthly")],
+            index=st.session_state["storage_frequency"],
+            key="storage_frequency",
+            help=t("storage_frequency_help")
         )
-        
+    
         vat = st.number_input(
             t("vat"), 
-            value=19.0,
+            value=st.session_state["vat"],
+            key="vat",
             help="VAT percentage charged on storage fees"
         )
-        
+    
         storage_metal = st.selectbox(
             t("storage_metal"),
             ["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"],
+            index=["Gold", "Silver", "Platinum", "Palladium", t("best_of_year"), "ALL"].index(st.session_state["storage_metal"]) if st.session_state["storage_metal"] in ["Gold", "Silver", "Platinum", "Palladium", "ALL"] else 0,
+            key="storage_metal",
             help="Which metal(s) to sell to cover storage costs"
         )
     
