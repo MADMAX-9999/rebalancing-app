@@ -16,10 +16,10 @@
         "rebalance_1": true,
         "rebalance_1_condition": false,
         "rebalance_1_threshold": 12.0,
-    #    "rebalance_1_start": "2010-01-01",
+    
         "rebalance_2": false,
         "rebalance_2_condition": false,
         "rebalance_2_threshold": 12.0,
-     #   "rebalance_2_start": "2010-07-01"
+     
     }
 }
