@@ -281,6 +281,21 @@ def generate_sample_inflation_data():
 # SETTINGS MANAGEMENT
 # =========================================
 
+def load_presets(presets_dir="presets"):
+    """Load preset JSON files from a directory"""
+    presets = {}
+    try:
+        for file in os.listdir(presets_dir):
+            if file.endswith(".json"):
+                with open(os.path.join(presets_dir, file), "r", encoding="utf-8") as f:
+                    presets[file.replace(".json", "")] = json.load(f)
+    except Exception as e:
+        st.warning(f"Error loading presets: {e}")
+        return presets
+
+
+
+
 def save_settings_to_file(settings, filename="precious_metals_settings.json"):
     """Save current settings to a JSON file"""
     try:
@@ -1011,6 +1026,21 @@ st.markdown("---")
 # Sidebar settings
 with st.sidebar:
     st.header(t("simulation_settings"))
+
+    with st.expander("Presets", expanded=False):
+    presets = load_presets()
+    if presets:
+        preset_names = list(presets.keys())
+        selected_preset = st.selectbox("Select a preset", preset_names)
+        if st.button("Load Preset"):
+            preset = presets[selected_preset]
+            # Przypisz wartości do sesji i zrób rerun
+            for key, value in preset.items():
+                st.session_state[key] = value
+            st.success(f"Preset '{selected_preset}' loaded.")
+            st.rerun()
+    else:
+        st.info("No presets found in /presets directory.")
     
     # Investment amounts and dates
     st.subheader(t("investment_amounts"))
