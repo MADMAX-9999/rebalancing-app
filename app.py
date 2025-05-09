@@ -1027,7 +1027,7 @@ st.markdown("---")
 with st.sidebar:
     st.header(t("simulation_settings"))
 
-    with st.expander("Presets", expanded=False):
+with st.expander("Presets", expanded=False):
     presets = load_presets()
     if presets:
         preset_names = list(presets.keys())
