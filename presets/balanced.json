@@ -1,0 +1,25 @@
+{
+    "alloc_Gold": 40,
+    "alloc_Silver": 30,
+    "alloc_Platinum": 20,
+    "alloc_Palladium": 10,
+    "initial_allocation": 100000,
+    "purchase_freq": "Month",
+    "purchase_day": 1,
+    "purchase_amount": 1000,
+    "storage_settings": {
+        "storage_fee": 1.5,
+        "vat": 19.0,
+        "storage_metal": "ALL"
+    },
+    "rebalance_settings": {
+        "rebalance_1": true,
+        "rebalance_1_condition": true,
+        "rebalance_1_threshold": 12.0,
+        "rebalance_1_start": "2010-01-01",
+        "rebalance_2": false,
+        "rebalance_2_condition": false,
+        "rebalance_2_threshold": 12.0,
+        "rebalance_2_start": "2010-07-01"
+    }
+}
