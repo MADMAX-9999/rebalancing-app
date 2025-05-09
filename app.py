@@ -1446,28 +1446,22 @@ with st.sidebar:
     st.subheader(t("margins_fees"))
     
     with st.expander(t("margins_fees"), expanded=False):
-        margins = {
-            "Gold": st.number_input(
-                t("gold_margin"), 
-                value=15.6,
-                help="Percentage markup when buying gold"
-            ),
-            "Silver": st.number_input(
-                t("silver_margin"), 
-                value=18.36,
-                help="Percentage markup when buying silver"
-            ),
-            "Platinum": st.number_input(
-                t("platinum_margin"), 
-                value=24.24,
-                help="Percentage markup when buying platinum"
-            ),
-            "Palladium": st.number_input(
-                t("palladium_margin"), 
-                value=22.49,
-                help="Percentage markup when buying palladium"
-            )
-        }
+    # Inicjalizacja session_state dla marż
+    if "margin_gold" not in st.session_state:
+        st.session_state["margin_gold"] = 15.6
+    if "margin_silver" not in st.session_state:
+        st.session_state["margin_silver"] = 18.36
+    if "margin_platinum" not in st.session_state:
+        st.session_state["margin_platinum"] = 24.24
+    if "margin_palladium" not in st.session_state:
+        st.session_state["margin_palladium"] = 22.49
+        
+    margins = {
+        "Gold": st.number_input(t("gold_margin"), value=st.session_state["margin_gold"], key="margin_gold"),
+        "Silver": st.number_input(t("silver_margin"), value=st.session_state["margin_silver"], key="margin_silver"),
+        "Platinum": st.number_input(t("platinum_margin"), value=st.session_state["margin_platinum"], key="margin_platinum"),
+        "Palladium": st.number_input(t("palladium_margin"), value=st.session_state["margin_palladium"], key="margin_palladium")
+    }
     
     # Buyback prices
     st.subheader(t("buyback_prices"))
