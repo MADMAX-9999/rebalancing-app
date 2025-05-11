@@ -1204,7 +1204,7 @@ with st.sidebar:
         
         vat = st.number_input(
             t("vat"), 
-            value=19.0,
+            value=0.0,
             help="VAT percentage charged on storage fees"
         )
         
